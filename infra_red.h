@@ -20,7 +20,7 @@ class InfraRed
 InfraRed::InfraRed(const int read_pin, const int light_pin) : read_pin_(read_pin), light_pin_(light_pin) {}
 
 InfraRed& InfraRed::pinSetup() {
-  pinMode(read_pin_, OUTPUT);
+  pinMode(read_pin_, INPUT);
   pinMode(light_pin_, OUTPUT);
   return *this;
 }
@@ -31,7 +31,7 @@ InfraRed& InfraRed::lightControl(const bool val) {
 }
 
 bool InfraRed::isOccupied() const{
-  return digitalRead(read_pin_);
+  return !digitalRead(read_pin_);
 }
 
 #endif
