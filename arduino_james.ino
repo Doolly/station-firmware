@@ -7,9 +7,9 @@
 #include <ros/time.h>
 #include <std_srvs/SetBool.h>
 #include <std_srvs/Trigger.h>
-#include <std_msgs/Float64.h>
 #include <sensor_msgs/Range.h>
-#include <geometry_msgs/Vector3.h>
+#include <james_msgs/Barometer.h>
+#include <james_msgs/MotorControl.h>
 
 //#define IR_READ_PIN 2
 //#define IR_LIGHT_PIN 3
@@ -25,18 +25,16 @@
 /*------ Global Variables ------*/
 ros::NodeHandle nh;
 /*----baromter----*/
-std_msgs::Float64 temperature, absolute_alt, relative_alt;
+james_msgs::Barometer baro_msg;
 Barometer baro;
-ros::Publisher pub_temp("/temperature", &temperature);
-ros::Publisher pub_absolute_alt("/absolute_alt", &absolute_alt);
-ros::Publisher pub_relative_alt("/relative_alt", &relative_alt);
+ros::Publisher pub_baro("/barometer", &baro_msg);
 
 /*----Motors----*/
 MotorController mc;
-void motorControlCB(const geometry_msgs::Vector3& msg) {
-  mc.control(0, 1, 255);
+void motorControlCB(const james_msgs::MotorControl& msg) {
+  mc.control(msg.motor, msg.direction, msg.pwm);
 }
-ros::Subscriber<geometry_msgs::Vector3> sub("motor_control", &motorControlCB);
+ros::Subscriber<james_msgs::MotorControl> sub("motor_control", &motorControlCB);
 
 /*----IR----*/
 //InfraRed ir(IR_READ_PIN, IR_LIGHT_PIN);
@@ -70,9 +68,7 @@ ros::Subscriber<geometry_msgs::Vector3> sub("motor_control", &motorControlCB);
 void setup()
 {
   nh.initNode();
-  nh.advertise(pub_temp);
-  nh.advertise(pub_absolute_alt);
-  nh.advertise(pub_relative_alt);
+  nh.advertise(pub_baro);
   baro.setReference();
 
   nh.subscribe(sub);
@@ -109,12 +105,12 @@ void loop()
     //    range_msg.header.stamp = nh.now();
     //    pub_range1.publish(&range_msg);
 
-    temperature.data = baro.getTemperature();
-    absolute_alt.data = baro.getAbsoluteAltitude();
-    relative_alt.data = baro.getRelativeAltitude();
-    pub_temp.publish(&temperature);
-    pub_absolute_alt.publish(&absolute_alt);
-    pub_relative_alt.publish(&relative_alt);
+    baro_msg.header.frame_id = "/barometer";
+    baro_msg.header.stamp = nh.now();
+    baro_msg.temperature = baro.getTemperature();
+    baro_msg.absolute_alt = baro.getAbsoluteAltitude();
+    baro_msg.relative_alt = baro.getRelativeAltitude();
+    pub_baro.publish(&baro_msg);
 
     range_time = millis() + 20;
   }
