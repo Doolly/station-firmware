@@ -17,10 +17,10 @@
 //#define US1_ANALOG_PIN A1
 #define LINEAR_ACTUATOR_L1 4
 #define LINEAR_ACTUATOR_L2 7
-#define LINEAR_ACTUATOR_L_PWM 5
 #define LINEAR_ACTUATOR_R1 8
 #define LINEAR_ACTUATOR_R2 9
-#define LINEAR_ACTUATOR_R_PWM 6
+#define CONVEYOR_PIN1 10
+#define CONVEYOR_PIN2 11
 
 /*------ Global Variables ------*/
 ros::NodeHandle nh;
@@ -31,7 +31,8 @@ ros::Publisher pub_baro("/barometer", &baro_msg);
 
 /*----Motors----*/
 MotorController mc;
-void motorControlCB(const james_msgs::MotorControl& msg) {
+void motorControlCB(const james_msgs::MotorControl &msg)
+{
   mc.control(msg.motor, msg.direction, msg.pwm);
 }
 ros::Subscriber<james_msgs::MotorControl> sub("motor_control", &motorControlCB);
@@ -72,9 +73,10 @@ void setup()
   baro.setReference();
 
   nh.subscribe(sub);
-  mc.addMotor(new PairedPWMMotor(LINEAR_ACTUATOR_L1, LINEAR_ACTUATOR_L2, LINEAR_ACTUATOR_L_PWM, LINEAR_ACTUATOR_R1, LINEAR_ACTUATOR_R2, LINEAR_ACTUATOR_R_PWM));
+  mc.addMotor(new PairedBaseMotor(LINEAR_ACTUATOR_L1, LINEAR_ACTUATOR_L2, LINEAR_ACTUATOR_R1, LINEAR_ACTUATOR_R2));
+  mc.addMotor(new BaseMotor(CONVEYOR_PIN1, CONVEYOR_PIN2));
   mc.pinSetup();
-  
+
   //  nh.advertiseService(light_server);
   //  nh.advertiseService(ir_server);
   //  ir.pinSetup();

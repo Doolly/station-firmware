@@ -5,17 +5,17 @@
 
 class BaseMotor
 {
-  private:
-    const int pin_1_;
-    const int pin_2_;
+private:
+  const int pin_1_;
+  const int pin_2_;
 
-  public:
-    BaseMotor() = delete;
-    BaseMotor(const int, const int);
-    virtual void pinSetup() const;
-    virtual void driveForward(int val = 255) const;
-    virtual void driveReverse(int val = 255) const;
-    virtual void stop() const;
+public:
+  BaseMotor() = delete;
+  BaseMotor(const int, const int);
+  virtual void pinSetup() const;
+  virtual void driveForward(int val = 255) const;
+  virtual void driveReverse(int val = 255) const;
+  virtual void stop() const;
 };
 
 BaseMotor::BaseMotor(const int pin_1, const int pin_2) : pin_1_(pin_1), pin_2_(pin_2) {}
@@ -46,15 +46,15 @@ void BaseMotor::stop() const
 
 class PWMMotor : public BaseMotor
 {
-  private:
-    const int pwm_pin_;
+private:
+  const int pwm_pin_;
 
-  public:
-    PWMMotor() = delete;
-    PWMMotor(const int, const int, const int);
-    void pinSetup() const override;
-    void driveForward(int) const override;
-    void driveReverse(int) const override;
+public:
+  PWMMotor() = delete;
+  PWMMotor(const int, const int, const int);
+  void pinSetup() const override;
+  void driveForward(int) const override;
+  void driveReverse(int) const override;
 };
 
 PWMMotor::PWMMotor(const int pin_1, const int pin_2, const int pwm_pin) : BaseMotor(pin_1, pin_2), pwm_pin_(pwm_pin) {}
@@ -85,22 +85,63 @@ void PWMMotor::driveReverse(int val) const
   analogWrite(pwm_pin_, val);
 }
 
+class PairedBaseMotor : public BaseMotor
+{
+private:
+  BaseMotor motor2_;
+
+public:
+  PairedBaseMotor() = delete;
+  PairedBaseMotor(const int, const int, const int, const int);
+  void pinSetup() const override;
+  void driveForward(int) const override;
+  void driveReverse(int) const override;
+  void stop() const override;
+};
+
+PairedBaseMotor::PairedBaseMotor(const int motor1_pin1, const int motor1_pin2, const int motor2_pin1, const int motor2_pin2)
+    : BaseMotor(motor1_pin1, motor1_pin2), motor2_(motor2_pin1, motor2_pin2) {}
+
+void PairedBaseMotor::pinSetup() const
+{
+  BaseMotor::pinSetup();
+  motor2_.pinSetup();
+}
+
+void PairedBaseMotor::driveForward(int val) const
+{
+  BaseMotor::driveForward(val);
+  motor2_.driveForward(val);
+}
+
+void PairedBaseMotor::driveReverse(int val) const
+{
+  BaseMotor::driveReverse(val);
+  motor2_.driveReverse(val);
+}
+
+void PairedBaseMotor::stop() const
+{
+  BaseMotor::stop();
+  motor2_.stop();
+}
+
 class PairedPWMMotor : public PWMMotor
 {
-  private:
-    PWMMotor motor2_;
+private:
+  PWMMotor motor2_;
 
-  public:
-    PairedPWMMotor() = delete;
-    PairedPWMMotor(const int, const int, const int, const int, const int, const int);
-    void pinSetup() const override;
-    void driveForward(int) const override;
-    void driveReverse(int) const override;
-    void stop() const override;
+public:
+  PairedPWMMotor() = delete;
+  PairedPWMMotor(const int, const int, const int, const int, const int, const int);
+  void pinSetup() const override;
+  void driveForward(int) const override;
+  void driveReverse(int) const override;
+  void stop() const override;
 };
 
 PairedPWMMotor::PairedPWMMotor(const int motor1_pin1, const int motor1_pin2, const int motor1_pwm, const int motor2_pin1, const int motor2_pin2, const int motor2_pwm)
-: PWMMotor(motor1_pin1, motor1_pin2, motor1_pwm), motor2_(motor2_pin1, motor2_pin2, motor2_pwm) {}
+    : PWMMotor(motor1_pin1, motor1_pin2, motor1_pwm), motor2_(motor2_pin1, motor2_pin2, motor2_pwm) {}
 
 void PairedPWMMotor::pinSetup() const
 {
@@ -133,27 +174,20 @@ enum Direction
   FORWARD,
 };
 
-enum Motors
-{
-  LINEAR_ACTUATOR_L,
-  LINEAR_ACTUATOR_R,
-  CONVEYER
-};
-
 class MotorController
 {
-  private:
-    int alloc_motor_;
-    int current_motor_;
-    BaseMotor **motors_;
+private:
+  int alloc_motor_;
+  int current_motor_;
+  BaseMotor **motors_;
 
-  public:
-    MotorController(const int = 5);
-    ~MotorController();
-    MotorController &addMotor(BaseMotor *motor);
-    MotorController &pinSetup();
-    int currentMotorNum() const;
-    MotorController &control(const int, Direction, const int pwm = 255);
+public:
+  MotorController(const int = 5);
+  ~MotorController();
+  MotorController &addMotor(BaseMotor *motor);
+  MotorController &pinSetup();
+  int currentMotorNum() const;
+  MotorController &control(const int, Direction, const int pwm = 255);
 };
 
 MotorController::MotorController(const int alloc_motor) : alloc_motor_(alloc_motor), current_motor_(0)
@@ -172,6 +206,7 @@ MotorController &MotorController::addMotor(BaseMotor *motor)
 {
   motors_[current_motor_] = motor;
   current_motor_++;
+  return *this;
 }
 
 MotorController &MotorController::pinSetup()
