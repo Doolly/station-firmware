@@ -98,12 +98,12 @@ void loop()
   if (millis() >= range_time)
   {
     //    range_msg.range = us0.getDistance();
-    //    range_msg.header.frame_id = "/sonar0";
+    //    range_msg.header.frame_id = "sonar0";
     //    range_msg.header.stamp = nh.now();
     //    pub_range0.publish(&range_msg);
 
     //    range_msg.range = us1.getDistance();
-    //    range_msg.header.frame_id = "/sonar1";
+    //    range_msg.header.frame_id = "sonar1";
     //    range_msg.header.stamp = nh.now();
     //    pub_range1.publish(&range_msg);
 
