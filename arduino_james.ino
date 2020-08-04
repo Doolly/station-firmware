@@ -33,29 +33,27 @@ ros::Publisher pub_baro("/barometer", &baro_msg);
 MotorController mc;
 void motorControlCB(const james_msgs::MotorControl &msg)
 {
-  mc.control(msg.motor, msg.direction, msg.pwm);
+  mc.control(msg.motor, static_cast<Direction>(msg.direction), msg.pwm);
 }
 ros::Subscriber<james_msgs::MotorControl> sub("motor_control", &motorControlCB);
 
 /*----IR----*/
 InfraRed ir(IR_READ_PIN, IR_LIGHT_PIN);
-bool lightControl(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response &res) {
+void lightControl(const std_srvs::SetBool::Request& req, std_srvs::SetBool::Response &res) {
   ir.lightControl(req.data);
   res.success = true;
   if (req.data)
     res.message = "Light on";
   else
     res.message = "Light off";
-  return res.success;
 }
 
-bool isOccupied(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response &res) {
+void isOccupied(const std_srvs::Trigger::Request& req, std_srvs::Trigger::Response &res) {
   res.success = ir.isOccupied();
   if (res.success)
     res.message = "There is a package";
   else
     res.message = "There is not a package";
-  return res.success;
 }
 
 ros::ServiceServer<std_srvs::SetBool::Request, std_srvs::SetBool::Response> light_server("/ir_light", &lightControl);
