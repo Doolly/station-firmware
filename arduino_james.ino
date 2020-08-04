@@ -2,7 +2,7 @@
 #include "barometer.h"
 #include "infra_red.h"
 #include "ultra_sound.h"
-#include "james_motor.h"
+#include "motors.h"
 #include <ros.h>
 #include <ros/time.h>
 #include <std_srvs/SetBool.h>
@@ -77,7 +77,6 @@ void setup()
   nh.subscribe(sub);
   mc.addMotor(new PairedBaseMotor(LINEAR_ACTUATOR_L1, LINEAR_ACTUATOR_L2, LINEAR_ACTUATOR_R1, LINEAR_ACTUATOR_R2));
   mc.addMotor(new BaseMotor(CONVEYOR_PIN1, CONVEYOR_PIN2));
-  mc.pinSetup();
 
   nh.advertiseService(light_server);
   nh.advertiseService(ir_server);
