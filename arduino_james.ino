@@ -80,12 +80,9 @@ void setup()
 
   nh.advertiseService(light_server);
   nh.advertiseService(ir_server);
-  ir.pinSetup();
 
   nh.advertise(pub_range0);
   nh.advertise(pub_range1);
-  us0.pinSetup();
-//  us1.pinSetup();
   range_msg.radiation_type = sensor_msgs::Range::ULTRASOUND;
   range_msg.field_of_view = 0.6;  // fake
   range_msg.min_range = 0.15;
