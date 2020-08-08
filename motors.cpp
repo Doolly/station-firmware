@@ -1,8 +1,8 @@
 #include "motors.h"
 
-BaseMotor::BaseMotor(const uint8_t pin_1, const uint8_t pin_2) : pin_1_(pin_1), pin_2_(pin_2) {
-    pinMode(pin_1_, OUTPUT);
-    pinMode(pin_2_, OUTPUT);
+BaseMotor::BaseMotor(const uint8_t pin_1, const uint8_t pin_2) : pin1_(pin_1), pin2_(pin_2) {
+    pinMode(pin1_, OUTPUT);
+    pinMode(pin2_, OUTPUT);
     motor_type_ = BASE_MOTOR;
 }
 
@@ -10,19 +10,18 @@ Motors BaseMotor::motorType() const {
     return motor_type_;
 }
 
-void BaseMotor::driveForward(const int val) const {
-    digitalWrite(pin_1_, HIGH);
-    digitalWrite(pin_2_, LOW);
-}
+void BaseMotor::control(const Direction direction) const {
+    if (direction == FORWARD) {
+        digitalWrite(pin1_, HIGH);
+        digitalWrite(pin2_, LOW);
 
-void BaseMotor::driveReverse(const int val) const {
-    digitalWrite(pin_1_, LOW);
-    digitalWrite(pin_2_, HIGH);
-}
-
-void BaseMotor::stop() const {
-    digitalWrite(pin_1_, LOW);
-    digitalWrite(pin_2_, LOW);
+    } else if (direction == REVERSE) {
+        digitalWrite(pin1_, LOW);
+        digitalWrite(pin2_, HIGH);
+    } else {
+        digitalWrite(pin1_, LOW);
+        digitalWrite(pin2_, LOW);
+    }
 }
 
 PWMMotor::PWMMotor(const uint8_t pin_1, const uint8_t pin_2, const uint8_t pwm_pin) : BaseMotor(pin_1, pin_2), pwm_pin_(pwm_pin), max_pwm_(255) {
@@ -30,16 +29,10 @@ PWMMotor::PWMMotor(const uint8_t pin_1, const uint8_t pin_2, const uint8_t pwm_p
     motor_type_ = PWM_MOTOR;
 }
 
-void PWMMotor::driveForward(int val) const {
-    BaseMotor::driveForward();
-    val = limit(val, 0, max_pwm_);
-    analogWrite(pwm_pin_, val);
-}
-
-void PWMMotor::driveReverse(int val) const {
-    BaseMotor::driveReverse();
-    val = limit(val, 0, max_pwm_);
-    analogWrite(pwm_pin_, val);
+void PWMMotor::control(const Direction direction, int pwm) const {
+    BaseMotor::control(direction);
+    pwm = limit(pwm, 0, max_pwm_);
+    analogWrite(pwm_pin_, pwm);
 }
 
 PWMMotor &PWMMotor::setMaxPWM(const int max_pwm) {
@@ -52,19 +45,9 @@ PairedBaseMotor::PairedBaseMotor(const uint8_t motor1_pin1, const uint8_t motor1
     motor_type_ = PAIRED_BASE_MOTOR;
 }
 
-void PairedBaseMotor::driveForward(const int val) const {
-    BaseMotor::driveForward(val);
-    motor2_.driveForward(val);
-}
-
-void PairedBaseMotor::driveReverse(const int val) const {
-    BaseMotor::driveReverse(val);
-    motor2_.driveReverse(val);
-}
-
-void PairedBaseMotor::stop() const {
-    BaseMotor::stop();
-    motor2_.stop();
+void PairedBaseMotor::control(const Direction direction) const {
+    BaseMotor::control(direction);
+    motor2_.control(direction);
 }
 
 PairedPWMMotor::PairedPWMMotor(const uint8_t motor1_pin1, const uint8_t motor1_pin2, const uint8_t motor1_pwm, const uint8_t motor2_pin1, const uint8_t motor2_pin2, const uint8_t motor2_pwm)
@@ -72,19 +55,9 @@ PairedPWMMotor::PairedPWMMotor(const uint8_t motor1_pin1, const uint8_t motor1_p
     motor_type_ = PAIRED_PWM_MOTOR;
 }
 
-void PairedPWMMotor::driveForward(int val) const {
-    PWMMotor::driveForward(val);
-    motor2_.driveForward(val);
-}
-
-void PairedPWMMotor::driveReverse(int val) const {
-    PWMMotor::driveReverse(val);
-    motor2_.driveReverse(val);
-}
-
-void PairedPWMMotor::stop() const {
-    PWMMotor::stop();
-    motor2_.stop();
+void PairedPWMMotor::control(const Direction direction, int pwm) const {
+    PWMMotor::control(direction, pwm);
+    motor2_.control(direction, pwm);
 }
 
 Encoder::Encoder(const uint8_t intterupt, const uint8_t digital) : interrupt_pin_(intterupt), digital_pin_(digital), cnt_(0), state_(false), direction_(true), resolution_(1920) {
@@ -154,11 +127,11 @@ EncoderMotor &EncoderMotor::control() {
     pwm_ = limit(pwm_, 20, 255);
 
     if (target_velocity_ > 0) {
-        PWMMotor::driveForward(pwm_);
+        PWMMotor::control(Direction::FORWARD, pwm_);
     } else if (target_velocity_ < 0) {
-        PWMMotor::driveReverse(pwm_);
+        PWMMotor::control(Direction::REVERSE, pwm_);
     } else {
-        PWMMotor::stop();
+        BaseMotor::control(Direction::STOP);
     }
 
     return *this;
@@ -170,6 +143,59 @@ double EncoderMotor::getAngularVelocity() const {
 
 uint8_t EncoderMotor::getPWM() const {
     return pwm_;
+}
+
+PulseControlledMotor::PulseControlledMotor(const uint8_t enable, const uint8_t cw, const uint8_t ccw)
+    : BaseMotor(cw, ccw), enable_(enable), resolution_(4000), wheel_radius_(0.012), position_(0), target_position_(0) {
+    pinMode(enable_, OUTPUT);
+    motor_type_ = PULSE_CONTROLLED_MOTOR;
+}
+
+void PulseControlledMotor::control(const Direction direction) {
+    if (direction == FORWARD) {
+        digitalWrite(pin1_, HIGH);
+        delayMicroseconds(1);
+        digitalWrite(pin1_, LOW);
+        delayMicroseconds(1);
+        position_ += tick_dist_;
+    }
+    if (direction == REVERSE) {
+        digitalWrite(pin2_, HIGH);
+        delayMicroseconds(1);
+        digitalWrite(pin2_, LOW);
+        delayMicroseconds(1);
+        position_ -= tick_dist_;
+    }
+}
+
+PulseControlledMotor &PulseControlledMotor::setResolution(const int resolution) {
+    resolution_ = resolution;
+    tick_dist_ = wheel_radius_ * 2 * PI / resolution_;
+    return *this;
+}
+
+PulseControlledMotor &PulseControlledMotor::setWheelRadius(const double wheel_radius) {
+    wheel_radius_ = wheel_radius;
+    resolution_ == 0 ? tick_dist_ = 1 : (tick_dist_ = wheel_radius_ * 2 * PI / resolution_);
+    return *this;
+}
+
+PulseControlledMotor &PulseControlledMotor::setTarget(const double target) {
+    target_position_ = target;
+    return *this;
+}
+
+PulseControlledMotor &PulseControlledMotor::control() {
+    digitalWrite(enable_, LOW);
+    double err = (target_position_ - position_) / tick_dist_;
+    if (err > 0.001) {
+        control(Direction::FORWARD);
+    } else if (err < -0.001) {
+        control(Direction::REVERSE);
+    } else {
+        control(Direction::STOP);
+    }
+    return *this;
 }
 
 MotorController::MotorController(const uint8_t alloc_motor) : alloc_motor_(alloc_motor), current_motor_(0) {
@@ -195,12 +221,19 @@ int MotorController::currentMotorNum() const {
 MotorController &MotorController::control(const int motor_address, Direction direction, int pwm) {
     if (motor_address >= current_motor_ || motor_address < 0)
         return *this;
-    if (direction == FORWARD)
-        motors_[motor_address]->driveForward(pwm);
-    else if (direction == REVERSE)
-        motors_[motor_address]->driveReverse(pwm);
-    else
-        motors_[motor_address]->stop();
+    Motors motor = motors_[motor_address]->motorType();
+    if (motor == BASE_MOTOR || motor == PAIRED_BASE_MOTOR) {
+        motors_[motor_address]->control(direction);
+    } else if (motor == PWM_MOTOR || motor == PAIRED_PWM_MOTOR) {
+        PWMMotor *motor = (PWMMotor *)motors_[motor_address];
+        motor->control(direction, pwm);
+    } else if (motor == ENCODER_MOTOR) {
+        EncoderMotor *motor = (EncoderMotor *)motors_[motor_address];
+        motor->control();
+    } else if (motor == PULSE_CONTROLLED_MOTOR) {
+        PulseControlledMotor *motor = (PulseControlledMotor *)motors_[motor_address];
+        motor->control();
+    }
     return *this;
 }
 
@@ -213,8 +246,8 @@ Vehicle &Vehicle::setWheelRadius(const double radius) {
     return *this;
 }
 
-Vehicle &Vehicle::setWidth(const double with_between_wheels) {
-    width_between_wheels_ = with_between_wheels;
+Vehicle &Vehicle::setWidth(const double width_between_wheels) {
+    width_between_wheels_ = width_between_wheels;
     return *this;
 }
 
@@ -232,7 +265,7 @@ Vehicle &Vehicle::setVelocity(double linear_x, double angular_z) {
     double target[2] = {0, 0};
     target[0] = linear_x + (angular_z * width_between_wheels_ / 2);
     target[1] = -(linear_x - (angular_z * width_between_wheels_ / 2));
-    for (int i = 0; i < current_motor_; i++){
+    for (int i = 0; i < current_motor_; i++) {
         if (motors_[i]->motorType() == ENCODER_MOTOR) {
             EncoderMotor *motor = (EncoderMotor *)motors_[i];
             motor->setTarget(target[i]);

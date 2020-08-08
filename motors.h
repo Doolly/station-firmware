@@ -18,24 +18,27 @@ enum Motors {
     PWM_MOTOR,
     PAIRED_BASE_MOTOR,
     PAIRED_PWM_MOTOR,
-    ENCODER_MOTOR
+    ENCODER_MOTOR,
+    PULSE_CONTROLLED_MOTOR
+};
+
+enum Direction {
+    REVERSE = -1,
+    STOP,
+    FORWARD,
 };
 
 class BaseMotor {
-   private:
-    const uint8_t pin_1_;
-    const uint8_t pin_2_;
-
    protected:
+    const uint8_t pin1_;
+    const uint8_t pin2_;
     Motors motor_type_;
 
    public:
     BaseMotor() = delete;
     BaseMotor(const uint8_t, const uint8_t);
     virtual Motors motorType() const;
-    virtual void driveForward(const int val = 255) const;
-    virtual void driveReverse(const int val = 255) const;
-    virtual void stop() const;
+    virtual void control(const Direction) const;
 };
 
 class PWMMotor : public BaseMotor {
@@ -46,8 +49,7 @@ class PWMMotor : public BaseMotor {
    public:
     PWMMotor() = delete;
     PWMMotor(const uint8_t, const uint8_t, const uint8_t);
-    void driveForward(int) const override;
-    void driveReverse(int) const override;
+    virtual void control(const Direction, int) const;
     PWMMotor &setMaxPWM(const int);
 };
 
@@ -58,9 +60,7 @@ class PairedBaseMotor : public BaseMotor {
    public:
     PairedBaseMotor() = delete;
     PairedBaseMotor(const uint8_t, const uint8_t, const uint8_t, const uint8_t);
-    void driveForward(const int) const override;
-    void driveReverse(const int) const override;
-    void stop() const override;
+    void control(const Direction) const override;
 };
 
 class PairedPWMMotor : public PWMMotor {
@@ -70,9 +70,7 @@ class PairedPWMMotor : public PWMMotor {
    public:
     PairedPWMMotor() = delete;
     PairedPWMMotor(const uint8_t, const uint8_t, const uint8_t, const uint8_t, const uint8_t, const uint8_t);
-    void driveForward(int) const override;
-    void driveReverse(int) const override;
-    void stop() const override;
+    void control(const Direction, int) const override;
 };
 
 class Encoder {
@@ -112,10 +110,24 @@ class EncoderMotor : public PWMMotor, public Encoder {
     uint8_t getPWM() const;
 };
 
-enum Direction {
-    REVERSE = -1,
-    STOP,
-    FORWARD,
+class PulseControlledMotor : public BaseMotor {
+   private:
+    const uint8_t enable_;
+    int resolution_;
+    double wheel_radius_;
+    double position_;
+    double target_position_;
+    double tick_dist_;
+
+   public:
+    PulseControlledMotor() = delete;
+    PulseControlledMotor(const uint8_t, const uint8_t, const uint8_t);
+    void control(const Direction);
+    PulseControlledMotor &setResolution(const int);
+    PulseControlledMotor &setWheelRadius(const double);
+    PulseControlledMotor &setTarget(const double);
+    PulseControlledMotor &control();
+    PulseControlledMotor &stop();
 };
 
 class MotorController {
@@ -129,7 +141,7 @@ class MotorController {
     virtual ~MotorController();
     MotorController &addMotor(BaseMotor *motor);
     int currentMotorNum() const;
-    MotorController &control(const int, Direction, int);
+    MotorController &control(const int, Direction, const int pwm = 255);
 };
 
 class Vehicle : public MotorController {
