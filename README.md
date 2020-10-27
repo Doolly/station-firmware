@@ -62,3 +62,6 @@ sudo apt-get purge ros-melodic-rosserial
 이후, catkin_make를 해주면 완성
 
 > 절대 이 이후 catkin_install은 하지 말 것!!! 
+
+
+기압계 빌드를 위해 첨부된 압축파일을 라이브러리에 추가
