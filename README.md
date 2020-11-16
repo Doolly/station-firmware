@@ -1,7 +1,7 @@
 # Arduino_James
 
 james에 올라갈 arduino code 입니다.
-
+# MEGA
 ## 적용된 센서
 - [x] barometer : MS5611
 - [x] ultresound : MB1010 LV-MaxSonar
