@@ -28,7 +28,8 @@
 #define LINEAR_ACTUATOR_R2 9
 #define CONVEYOR_PIN1 10
 #define CONVEYOR_PIN2 11
-
+#define ROLLSHUTTER_PIN1 10
+#define ROLLSHUTTER_PIN2 11
 
 
 /*-----msgs-----*/
