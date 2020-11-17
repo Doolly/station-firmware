@@ -30,6 +30,7 @@ void setup() {
 
   mc.addMotor(new PairedBaseMotor(LINEAR_ACTUATOR_L1, LINEAR_ACTUATOR_L2, LINEAR_ACTUATOR_R1, LINEAR_ACTUATOR_R2));
   mc.addMotor(new BaseMotor(CONVEYOR_PIN1, CONVEYOR_PIN2));
+  mc.addMotor(new BaseMotor(ROLLSHUTTER_PIN1, ROLLSHUTTER_PIN2));
 
   nh.advertiseService(light_server);
   nh.advertiseService(ir_server);
