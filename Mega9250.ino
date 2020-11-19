@@ -5,6 +5,7 @@ const unsigned long BARO_FREQUENCY = 15;
 #include "Mega9250.h"
 
 void setup() {
+  
   SPI.begin();
   IMU.begin();
 
