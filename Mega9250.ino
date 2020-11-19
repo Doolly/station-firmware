@@ -7,11 +7,11 @@ const unsigned long BARO_FREQUENCY = 15;
 void setup() {
   SPI.begin();
   IMU.begin();
-  int IMU_setAccelRange = IMU.setAccelRange(MPU9250::ACCEL_RANGE_16G);
+
   int IMU_gyroStatus = IMU.calibrateGyro();
   int IMU_accelStatus = IMU.calibrateAccel();
   int IMU_magStatus = IMU.calibrateMag();
-
+  int IMU_setAccelRange = IMU.setAccelRange(MPU9250::ACCEL_RANGE_16G);
   
   Wire.begin();
   MS5611.begin();
