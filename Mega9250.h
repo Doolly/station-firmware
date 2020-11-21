@@ -32,6 +32,8 @@
 #define ROLLSHUTTER_PIN2 6
 
 
+
+
 /*-----msgs-----*/
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/Range.h>
@@ -150,7 +152,7 @@ unsigned long extra_CYCLE_T = 0;
 
 #define FILTER_NUM    3
 
-void computeIMU() {
+void computeIMU_gyro() {
 
 
   uint32_t i;
@@ -175,13 +177,60 @@ void computeIMU() {
       gyroADC[axis][i] = gyroADC[axis][i - 1];
     }
 
-    if (abs(gyro[axis]) <= 0.003)
+    if (abs(gyro[axis]) <= 0.03)
     {
       gyro[axis] = 0;
     }
   }
 
 }
+
+void computeIMU_acc() {
+
+
+  uint32_t i;
+  static float accADC[3][FILTER_NUM] = {0,};
+  float accAdcSum;
+
+  uint32_t axis;
+
+
+  for (axis = 0; axis < 3; axis++)
+  {
+    accADC[axis][0] = acc[axis];
+
+    accAdcSum = 0;
+    for (i = 0; i < FILTER_NUM; i++)
+    {
+      accAdcSum += accADC[axis][i];
+    }
+    acc[axis] = accAdcSum / FILTER_NUM;
+    for (i = FILTER_NUM - 1; i > 0; i--)
+    {
+      accADC[axis][i] = accADC[axis][i - 1];
+    }
+
+    if (abs(acc[0]) <= 0.1)
+    {
+      acc[0] = 0;
+    }
+
+    if (abs(acc[1]) <= 0.1)
+    {
+      acc[1] = 0;
+    }
+
+    //    if (abs(acc[axis]) <= 0.03)
+    //    {
+    //      acc[axis] = 0;
+    //    }
+
+  }
+
+
+}
+
+
 //
 //
 //void computeIMU_1() {
@@ -229,7 +278,7 @@ void computeIMU() {
 //    gyroRaw[i]  = IMU.gyroRAW[i];
 //    gyroData[i] = IMU.gyroADC[i];
 //  }
-//  
+//
 ////  gx = (float)IMU.gyroADC[0]* 0.0010642;
 ////  gy = (float)IMU.gyroADC[1]* 0.0010642;
 ////  gz = (float)IMU.gyroADC[2]* 0.0010642;
@@ -247,14 +296,14 @@ void computeIMU() {
 
 void pub_IMU() {
   if (millis() >= IMU_CYCLE_T * IMU_COUNT) {
-        IMU.readSensor();
-    acc[0] = IMU.getAccelY_mss();// + 0.19;
-    acc[1] = IMU.getAccelX_mss();// - 0.06;
-    acc[2] = -IMU.getAccelZ_mss() +0.67;
+    IMU.readSensor();
+    acc[0] = IMU.getAccelY_mss()-1.24;// + 0.19;
+    acc[1] = IMU.getAccelX_mss()-0.47;// - 0.06;
+    acc[2] = -IMU.getAccelZ_mss() + 1.2;
 
-        gyro[0] = IMU.getGyroY_rads();
-        gyro[1] = IMU.getGyroX_rads();
-        gyro[2] = -IMU.getGyroZ_rads();
+    gyro[0] = IMU.getGyroY_rads();
+    gyro[1] = IMU.getGyroX_rads();
+    gyro[2] = -IMU.getGyroZ_rads();
     //gyro[0] = IMU.gyroADC[0];
     //gyro[1] = IMU.gyroADC[1];
     //gyro[2] = -IMU.gyroADC[2];
@@ -265,11 +314,12 @@ void pub_IMU() {
 
     //    gyro_common();
 
-      computeIMU();
+    computeIMU_gyro();
+    computeIMU_acc();
 
 
 
-  MadgwickAHRSupdateIMU(gyro[0], gyro[1], gyro[2], acc[0], acc[1], acc[2]);
+    MadgwickAHRSupdateIMU(gyro[0], gyro[1], gyro[2], acc[0], acc[1], acc[2]);
 
 
 
