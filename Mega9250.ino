@@ -1,19 +1,20 @@
-const unsigned long IMU_FREQUENCY = 64;
+const unsigned long IMU_FREQUENCY = 50;
 const unsigned long SONAR_1_FREQUENCY = 20;
-const unsigned long BARO_FREQUENCY = 15;
+const unsigned long BARO_FREQUENCY = 20;
 
 #include "Mega9250.h"
 
 void setup() {
-  
   SPI.begin();
   IMU.begin();
-
+  
   int IMU_gyroStatus = IMU.calibrateGyro();
+  int IMU_setAccelRange = IMU.setAccelRange(MPU9250::ACCEL_RANGE_16G);
+
   int IMU_accelStatus = IMU.calibrateAccel();
   int IMU_magStatus = IMU.calibrateMag();
-  int IMU_setAccelRange = IMU.setAccelRange(MPU9250::ACCEL_RANGE_16G);
-  
+
+
   Wire.begin();
   MS5611.begin();
 
@@ -23,7 +24,7 @@ void setup() {
 
   nh.initNode();
   nh.subscribe(sub);
-  
+
   //  broadcaster.init(nh);
   nh.advertise(pub);
   nh.advertise(pub_baro);
