@@ -7,7 +7,7 @@ james에 올라갈 arduino code 입니다.
 - [x] ultresound : MB1010 LV-MaxSonar
 - [x] IR : --- ( 내부가 비었는지 찼는지 확인용 )
 - [x] Motor ( linear Actuator ) 
-- [ ] Motor ( conveyer control ) **- 추가 예정**
+- [ ] Motor ( conveyer control ) 
 
 ## Topic & Service
 ### Topic (20 hz) - Publish
