@@ -12,9 +12,6 @@
 //#include <tf/tf.h>
 //#include <tf/transform_broadcaster.h>
 
-//#include <Wire.h>
-//#include <SPI.h>
-
 #include "MPU9250.h"
 #include "barometer.h"
 #include "MadgwickAHRS.h"
@@ -34,9 +31,6 @@
 #define CONVEYOR_PIN2 11
 #define ROLLSHUTTER_PIN1 5
 #define ROLLSHUTTER_PIN2 6
-
-
-
 
 /*-----msgs-----*/
 #include <sensor_msgs/Imu.h>
@@ -75,7 +69,10 @@ float gx, gy, gz;
 
 float gRes;
 
-
+unsigned long IMU_COUNT = 0;
+unsigned long BARO_COUNT = 1;
+unsigned long SONAR_1_COUNT = 1;
+unsigned long extra_COUNT = 0;
 
 /*----baromter----*/
 james_msgs::Barometer baro_msg;
@@ -84,8 +81,7 @@ Barometer baro;
 
 /*----Ultrasound----*/
 sensor_msgs::Range range_msg;
-//UltraSound us0(US0_ANALOG_PIN), us1(US1_ANALOG_PIN);
-UltraSound us0(US0_ANALOG_PIN);
+UltraSound us0(US0_ANALOG_PIN), us1(US1_ANALOG_PIN);
 ros::Publisher pub_range0( "/sonar0", &range_msg);
 ros::Publisher pub_range1( "/sonar1", &range_msg);
 
@@ -120,34 +116,7 @@ void isOccupied(const std_srvs::Trigger::Request& req, std_srvs::Trigger::Respon
 ros::ServiceServer<std_srvs::SetBool::Request, std_srvs::SetBool::Response> light_server("/ir_light", &lightControl);
 ros::ServiceServer<std_srvs::Trigger::Request, std_srvs::Trigger::Response> ir_server("/ir", &isOccupied);
 
-
-const int adc_pin = 0;
-
-
-
-/*----Scheduler----*/
-
-const unsigned long extra_FREQUENCY = 0;
-
-unsigned long IMU_RUNTIME = 11;
-unsigned long BARO_RUNTIME = 22;
-unsigned long SONAR_1_RUNTIME = 0;
-unsigned long extra_RUNTIME = 0;
-
-unsigned long IMU_COUNT = 0;
-unsigned long BARO_COUNT = 1;
-unsigned long SONAR_1_COUNT = 1;
-unsigned long extra_COUNT = 0;
-unsigned long IMU_CYCLE_T = 1000 / IMU_FREQUENCY;
-unsigned long Baro_CYCLE_T = 1000 / BARO_FREQUENCY;
-unsigned long SONAR_1_CYCLE_T = 1000 / SONAR_1_FREQUENCY;
-
-unsigned long extra_CYCLE_T = 0;
 /////////////////////////////////////////////////////////////////////
-
-
-//#define MPU_CALI_COUNT  70
-
 
 #define FILTER_NUM    3
 
@@ -183,7 +152,6 @@ void computeIMU_gyro() {
   }
 
 }
-
 void computeIMU_acc() {
 
 
@@ -230,12 +198,15 @@ void computeIMU_acc() {
 }
 
 
+void pub_IMU(const unsigned long IMU_FREQUENCY) {
 
-void pub_IMU() {
+  unsigned long IMU_CYCLE_T = 1000 / IMU_FREQUENCY;
+
+
   if (millis() >= IMU_CYCLE_T * IMU_COUNT) {
     IMU.readSensor();
-    acc[0] = IMU.getAccelY_mss()-1.24;// + 0.19;
-    acc[1] = IMU.getAccelX_mss()-0.47;// - 0.06;
+    acc[0] = IMU.getAccelY_mss() - 1.24; // + 0.19;
+    acc[1] = IMU.getAccelX_mss() - 0.47; // - 0.06;
     acc[2] = -IMU.getAccelZ_mss() + 1.2;
 
     gyro[0] = IMU.getGyroY_rads();
@@ -280,9 +251,10 @@ void pub_IMU() {
 
   }
 }
+void pub_Baro(unsigned long BARO_FREQUENCY) {
 
+  unsigned long Baro_CYCLE_T = 1000 / BARO_FREQUENCY;
 
-void pub_Baro() {
   if (millis() >= Baro_CYCLE_T * BARO_COUNT) {
     baro_msg.header.frame_id = "/barometer";
     baro_msg.header.stamp = nh.now();
@@ -295,21 +267,25 @@ void pub_Baro() {
     BARO_COUNT++;
   }
 }
-
-void pub_Sonar() {
-  if (millis() >= SONAR_1_CYCLE_T * SONAR_1_COUNT) {
+void pub_Sonar(unsigned long SONAR_1_FREQUENCY) {
   
+  unsigned long SONAR_1_CYCLE_T = 1000 / SONAR_1_FREQUENCY;
+
+  if (millis() >= SONAR_1_CYCLE_T * SONAR_1_COUNT) {
+
     range_msg.range = us0.getDistance();
-    if(range_msg.range < range_msg.min_range || range_msg.range > range_msg.max_range ) range_msg.range = range_msg.max_range;
+    if (range_msg.range < range_msg.min_range || range_msg.range > range_msg.max_range ) range_msg.range = range_msg.max_range;
     range_msg.header.frame_id = "sonar0";
     range_msg.header.stamp = nh.now();
     pub_range0.publish(&range_msg);
 
-//    range_msg.range = us1.getDistance();
-//    range_msg.header.frame_id = "sonar1";
-//    range_msg.header.stamp = nh.now();
-//    pub_range1.publish(&range_msg);
+    //    range_msg.range = us1.getDistance();
+    //    range_msg.header.frame_id = "sonar1";
+    //    range_msg.header.stamp = nh.now();
+    //    pub_range1.publish(&range_msg);
 
     SONAR_1_COUNT++;
   }
 }
+
+
