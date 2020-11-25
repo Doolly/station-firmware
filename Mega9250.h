@@ -14,14 +14,18 @@
 
 //#include <Wire.h>
 //#include <SPI.h>
-#include "MS5611.h"
+
 #include "MPU9250.h"
+#include "barometer.h"
 #include "MadgwickAHRS.h"
 #include "infra_red.h"
+#include "ultra_sound.h"
 #include "motors.h"
 
 #define IR_READ_PIN A2
 #define IR_LIGHT_PIN A3
+#define US0_ANALOG_PIN A0
+#define US1_ANALOG_PIN A1
 #define LINEAR_ACTUATOR_L1 4
 #define LINEAR_ACTUATOR_L2 7
 #define LINEAR_ACTUATOR_R1 8
@@ -52,7 +56,7 @@ ros::NodeHandle nh;
 sensor_msgs::Imu imu;
 ros::Publisher pub("imumsgs_mpu9250", &imu);
 MPU9250 IMU(SPI, 12);
-MS5611 MS5611(0x77);
+
 
 //MS5611 MS5611(12);
 float acc[3], gyro[3], mag[3];
@@ -76,12 +80,14 @@ float gRes;
 /*----baromter----*/
 james_msgs::Barometer baro_msg;
 ros::Publisher pub_baro("/barometer", &baro_msg);
-float referencePressure;
+Barometer baro;
 
 /*----Ultrasound----*/
 sensor_msgs::Range range_msg;
-ros::Publisher pub_range( "/ultrasound", &range_msg);
-
+//UltraSound us0(US0_ANALOG_PIN), us1(US1_ANALOG_PIN);
+UltraSound us0(US0_ANALOG_PIN);
+ros::Publisher pub_range0( "/sonar0", &range_msg);
+ros::Publisher pub_range1( "/sonar1", &range_msg);
 
 /*----Motors----*/
 MotorController mc;
@@ -117,14 +123,7 @@ ros::ServiceServer<std_srvs::Trigger::Request, std_srvs::Trigger::Response> ir_s
 
 const int adc_pin = 0;
 
-//char frameid[] = "/ultrasound";
 
-double getRange_Ultrasound(int pin_num) {
-  int val = 0;
-  for (int i = 0; i < 4; i++) val += analogRead(pin_num);
-  double range =  val;
-  return range / 322.519685;  // (0.0124023437 /4) ; //cvt to meters
-}
 
 /*----Scheduler----*/
 
@@ -231,68 +230,6 @@ void computeIMU_acc() {
 }
 
 
-//
-//
-//void computeIMU_1() {
-//
-//  //  static uint32_t prev_process_time = micros();
-//  //  static uint32_t cur_process_time = 0;
-//  //  static uint32_t process_time = 0;
-//  uint32_t i;
-//  static int32_t gyroADC[3][FILTER_NUM] = {0,};
-//  int32_t gyroAdcSum;
-//
-//  gRes = 2000.0 / 32768.0; // 2000dps
-//
-//  uint32_t axis;
-//
-//  //  SEN.acc_get_adc();
-//  //IMU.gyro_get_adc();
-//  //  SEN.mag_get_adc();
-//
-//  for (axis = 0; axis < 3; axis++)
-//  {
-//    gyroADC[axis][0] = IMU.gyroADC[axis];
-//
-//
-//    gyroAdcSum = 0;
-//    for (i = 0; i < FILTER_NUM; i++)
-//    {
-//      gyroAdcSum += gyroADC[axis][i];
-//    }
-//    IMU.gyroADC[axis] = gyroAdcSum / FILTER_NUM;
-//    for (i = FILTER_NUM - 1; i > 0; i--)
-//    {
-//      gyroADC[axis][i] = gyroADC[axis][i - 1];
-//    }
-//
-//    if (abs(IMU.gyroADC[axis]) <= 3)
-//    {
-//      IMU.gyroADC[axis] = 0;
-//    }
-//  }
-//
-//
-//  for ( i = 0; i < 3; i++ )
-//  {
-//    gyroRaw[i]  = IMU.gyroRAW[i];
-//    gyroData[i] = IMU.gyroADC[i];
-//  }
-//
-////  gx = (float)IMU.gyroADC[0]* 0.0010642;
-////  gy = (float)IMU.gyroADC[1]* 0.0010642;
-////  gz = (float)IMU.gyroADC[2]* 0.0010642;
-//
-//
-// // gx = (float)IMU.gyroADC[0] * gRes;
-
-// // gy = (float)IMU.gyroADC[1] * gRes;
-// // gz = (float)IMU.gyroADC[2] * gRes;
-//
-//
-//
-//}
-
 
 void pub_IMU() {
   if (millis() >= IMU_CYCLE_T * IMU_COUNT) {
@@ -350,35 +287,28 @@ void pub_Baro() {
     baro_msg.header.frame_id = "/barometer";
     baro_msg.header.stamp = nh.now();
 
-    int result_1 = MS5611.read(12);
-    float absolutealt = MS5611.getAltitude(MS5611.getPressure() * 0.01); //cm
-    float relativealt = MS5611.getAltitude(MS5611.getPressure() * 0.01, referencePressure);
-    float temperature = MS5611.getTemperature() * 0.01; //c
-
-    baro_msg.temperature = temperature;
-    baro_msg.absolute_alt = absolutealt;
-    baro_msg.relative_alt = relativealt;
+    baro_msg.temperature = baro.getTemperature();
+    baro_msg.absolute_alt = baro.getAbsoluteAltitude();
+    baro_msg.relative_alt = baro.getRelativeAltitude();
     pub_baro.publish(&baro_msg);
+
     BARO_COUNT++;
   }
 }
 
 void pub_Sonar() {
   if (millis() >= SONAR_1_CYCLE_T * SONAR_1_COUNT) {
-
-    range_msg.range = getRange_Ultrasound(1);
-    if (range_msg.range < range_msg.min_range || range_msg.range > range_msg.max_range ) range_msg.range = range_msg.max_range;
-    range_msg.header.frame_id = "sonar";
+  
+    range_msg.range = us0.getDistance();
+    if(range_msg.range < range_msg.min_range || range_msg.range > range_msg.max_range ) range_msg.range = range_msg.max_range;
+    range_msg.header.frame_id = "sonar0";
     range_msg.header.stamp = nh.now();
+    pub_range0.publish(&range_msg);
 
-
-    range_msg.radiation_type = sensor_msgs::Range::ULTRASOUND;
-    range_msg.field_of_view = 0.6;  // fake
-    range_msg.min_range = 0.15;
-    range_msg.max_range = 1.5;
-
-    pub_range.publish(&range_msg);
-
+//    range_msg.range = us1.getDistance();
+//    range_msg.header.frame_id = "sonar1";
+//    range_msg.header.stamp = nh.now();
+//    pub_range1.publish(&range_msg);
 
     SONAR_1_COUNT++;
   }
