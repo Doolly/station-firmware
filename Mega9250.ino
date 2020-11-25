@@ -1,6 +1,6 @@
 const unsigned long IMU_FREQUENCY = 50;
-const unsigned long SONAR_1_FREQUENCY = 20;
-const unsigned long BARO_FREQUENCY = 20;
+const unsigned long SONAR_1_FREQUENCY = 15;
+const unsigned long BARO_FREQUENCY = 14;
 
 #include "Mega9250.h"
 
@@ -15,21 +15,17 @@ void setup() {
   int IMU_magStatus = IMU.calibrateMag();
 
 
-  Wire.begin();
-  MS5611.begin();
-
-  ///// Reference_pressure setting :) //////
-  int result = MS5611.read();
-  referencePressure = MS5611.getPressure() * 0.01 ;
-
   nh.initNode();
   nh.subscribe(sub);
 
   //  broadcaster.init(nh);
   nh.advertise(pub);
   nh.advertise(pub_baro);
-  nh.advertise(pub_range);
+  baro.setReference();
 
+  nh.advertise(pub_range0);
+  nh.advertise(pub_range1);
+  
   mc.addMotor(new PairedBaseMotor(LINEAR_ACTUATOR_L1, LINEAR_ACTUATOR_L2, LINEAR_ACTUATOR_R1, LINEAR_ACTUATOR_R2));
   mc.addMotor(new BaseMotor(CONVEYOR_PIN1, CONVEYOR_PIN2));
   mc.addMotor(new BaseMotor(ROLLSHUTTER_PIN1, ROLLSHUTTER_PIN2));
