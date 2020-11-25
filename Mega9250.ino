@@ -1,16 +1,11 @@
-const unsigned long IMU_FREQUENCY = 50;
-const unsigned long SONAR_1_FREQUENCY = 15;
-const unsigned long BARO_FREQUENCY = 14;
-
 #include "Mega9250.h"
 
-void setup() {
+void setup(){
   SPI.begin();
   IMU.begin();
-  
+
   int IMU_gyroStatus = IMU.calibrateGyro();
   int IMU_setAccelRange = IMU.setAccelRange(MPU9250::ACCEL_RANGE_16G);
-
   int IMU_accelStatus = IMU.calibrateAccel();
   int IMU_magStatus = IMU.calibrateMag();
 
@@ -33,26 +28,16 @@ void setup() {
   nh.advertiseService(light_server);
   nh.advertiseService(ir_server);
 
-  nh.advertise(pub_range0);
-  nh.advertise(pub_range1);
- 
-
   range_msg.radiation_type = sensor_msgs::Range::ULTRASOUND;
   range_msg.field_of_view = 0.6;  // fake
   range_msg.min_range = 0.15;
   range_msg.max_range = 1.5;
-
-
 }
 
-int count_IMU;
-long range_time_imu, range_time_baro;
-
-void loop()
-{
-  pub_IMU();
-  pub_Baro();
-  pub_Sonar();
+void loop(){
+  //number inside the '()' is the rate iof each sensors.//
+  pub_IMU(50);
+  pub_Baro(14);
+  pub_Sonar(15);
   nh.spinOnce();
-
 }
