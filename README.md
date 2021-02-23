@@ -1,19 +1,14 @@
-# Arduino_James
+# Arduino_W-station
 
-james에 올라갈 arduino code 입니다.
+W-station 올라갈 arduino code 입니다.
 
 ## 적용된 센서
-- [x] barometer : MS5611
-- [x] ultresound : MB1010 LV-MaxSonar
 - [x] IR : --- ( 내부가 비었는지 찼는지 확인용 )
 - [x] Motor ( linear Actuator ) 
 - [ ] Motor ( conveyer control ) 
 
 ## Topic & Service
-### Topic (20 hz) - Publish
-- /sonar0 (sensor_msgs/Range)
-- /sonar1 (sensor_msgs/Range)
-- /barometer (james_msgs/Barometer) : header, temperature, absolute_alt, relative_alt
+
 ### Topic - Subscribe
 - /motor_control (james_msgs/MotorControl) : motor, direction, pwm
 #### motor control example
@@ -64,4 +59,3 @@ sudo apt-get purge ros-melodic-rosserial
 > 절대 이 이후 catkin_install은 하지 말 것!!! 
 
 
-기압계 빌드를 위해 첨부된 압축파일을 라이브러리에 추가
