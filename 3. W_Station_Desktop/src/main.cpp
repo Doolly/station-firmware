@@ -52,7 +52,6 @@ ros::Subscriber<std_msgs::String> subscribeSendToDestination("wstation/send_to_d
 
 void setup() 
 {
-    /* Intialize Ros instances */
     pinMode(DEBUG_LED1_PIN, OUTPUT);
     pinMode(DEBUG_LED2_PIN, OUTPUT);
     pinMode(DEBUG_LED3_PIN, OUTPUT);
@@ -101,19 +100,21 @@ void loop()
         liftCurrentFloor.data = static_cast<int8_t>(lift.GetCurrentFloor());
         publishLiftCurrentFloor.publish(&liftCurrentFloor);
 
-        for (uint8_t i = 0; i < lift.GetLiftStatus().length(); ++i)
+        uint8_t liftStatusLength = lift.GetLiftStatus().length();
+        for (uint8_t i = 0; i < liftStatusLength; ++i)
         {
             cArrLiftStatus[i] = lift.GetLiftStatus()[i];
         }
-        cArrLiftStatus[lift.GetLiftStatus().length()] = 0;
+        cArrLiftStatus[liftStatusLength] = 0;
         liftStatus.data = cArrLiftStatus;
         publishLiftStatus.publish(&liftStatus);
 
-        for (uint8_t i = 0; i < lift.GetLiftItemStatus().length(); ++i)
+        uint8_t liftItemStatusLength = lift.GetLiftItemStatus().length();
+        for (uint8_t i = 0; i < liftItemStatusLength; ++i)
         {
             cArrLiftStatus[i] = lift.GetLiftItemStatus()[i];
         }
-        cArrLiftStatus[lift.GetLiftItemStatus().length()] = 0;
+        cArrLiftStatus[liftItemStatusLength] = 0;
         liftItemStatus.data = cArrLiftStatus;
         publishLiftItemState.publish(&liftItemStatus);
 
@@ -147,10 +148,9 @@ void loop()
             isSubscribePushItemToLift = false;
 
             currentConveyor = &(conveyorList[static_cast<uint8_t>(lift.GetCurrentFloor()) - 1]);
-
             if (pushItemToLiftFlag == COMMAND_PUSH)
             {
-                /* lift 가 목적지에 도착해서 arrived 상태로 대기하고 있을 경우에만 conveyor moving 명령을 먹음 */
+                /* moving control available when only lift's state is "arrived" */
                 if (lift.GetLiftStatus() == LIFT_STATUS_ARRIVED)
                 {
                     currentConveyor->MoveLeft();
@@ -183,23 +183,24 @@ void loop()
                 }
             }
 
-            led4Toggle = !led4Toggle;
-            digitalWrite(DEBUG_LED4_PIN, led4Toggle);
+            //led4Toggle = !led4Toggle;
+            //digitalWrite(DEBUG_LED4_PIN, led4Toggle);
         }
     }
 
+    /* lift will go to target floor => checking validation */
     if (lift.GetLiftStatus() == LIFT_STATUS_MOVE)
     {
-        digitalWrite(DEBUG_LED3_PIN, HIGH);
         lift.UpdateCurrentFloor();
+
         if (lift.GetCurrentFloor() == targetFloor) 
         {
             lift.StopElevateMotor();
             lift.SetLiftStatus(LIFT_STATUS_ARRIVED);
-            digitalWrite(DEBUG_LED3_PIN, LOW);
         }
     }
 
+    /* item push to lift => checking validation */
     if (currentConveyor != nullptr) 
     {
         if (currentConveyor->GetState() == CONVEYOR_STATUS_MOVE)
@@ -220,10 +221,13 @@ void loop()
         }
     }
 
+    /* send to "james" or "tray" => checking validation */
     if (lift.GetLiftMotorStatus() == LIFT_MOTOR_STATUS_MOVE)
     {
         if (destination == COMMAND_SEND_TO_JAMES)
         {
+            /* james 에게 잘 들어 갔는 지에 대한 판단 필요 */
+            // TODO: 
             lift.Initialize();
         }
         else /* recved "tray" */
@@ -276,11 +280,6 @@ void GetAllStationStatus(std_msgs::Int8MultiArray& status)
 /* Subscriber Callback Function */
 void SubscribeLiftDestinationFloor(const std_msgs::Int8& floor)
 {
-    if (floor.data == -1) 
-    {
-        return;
-    }
-
     targetFloor = static_cast<eFloor>(floor.data);
     isSubscribeLiftDestinationFloor = true;
 }
