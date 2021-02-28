@@ -97,7 +97,7 @@ void loop()
         
         GetAllStationStatus(stationStatus);
         //publishItemStatus.publish(&stationStatus);
-        
+
         liftCurrentFloor.data = static_cast<int8_t>(lift.GetCurrentFloor());
         publishLiftCurrentFloor.publish(&liftCurrentFloor);
 
@@ -129,7 +129,7 @@ void loop()
 
         if (isSubscribeLiftDestinationFloor == true) 
         {
-            isSubscribeSendToDestination = false;
+            isSubscribeLiftDestinationFloor = false;
             
             String status = lift.GetLiftStatus();
             
@@ -184,17 +184,19 @@ void loop()
             }
 
             led4Toggle = !led4Toggle;
-            digitalWrite(DEBUG_LED2_PIN, led4Toggle);
+            digitalWrite(DEBUG_LED4_PIN, led4Toggle);
         }
     }
 
     if (lift.GetLiftStatus() == LIFT_STATUS_MOVE)
     {
+        digitalWrite(DEBUG_LED3_PIN, HIGH);
         lift.UpdateCurrentFloor();
         if (lift.GetCurrentFloor() == targetFloor) 
         {
             lift.StopElevateMotor();
             lift.SetLiftStatus(LIFT_STATUS_ARRIVED);
+            digitalWrite(DEBUG_LED3_PIN, LOW);
         }
     }
 
@@ -280,7 +282,7 @@ void SubscribeLiftDestinationFloor(const std_msgs::Int8& floor)
     }
 
     targetFloor = static_cast<eFloor>(floor.data);
-    isSubscribeSendToDestination = true;
+    isSubscribeLiftDestinationFloor = true;
 }
 
 void SubscribePushItemToLift(const std_msgs::String& flag)
