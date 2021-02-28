@@ -14,6 +14,7 @@ void LevelSwitch::SetReadPin(int8_t readPin)
     }
 
     pinMode(readPin, INPUT_PULLUP);
+    mReadPin = readPin;
 }
 
 bool LevelSwitch::GetState() const

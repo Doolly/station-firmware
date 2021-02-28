@@ -11,6 +11,8 @@ Conveyor conveyorList[MAX_FLOOR_COUNT] = {
 
 Conveyor::Conveyor(const eFloor floor) 
     : mFloor(floor)
+    , mConveyorStatus(CONVEYOR_STATUS_STOP)
+    , mIsItemPassed(false)
 {
     switch (floor)
     {
@@ -46,18 +48,21 @@ Conveyor::Conveyor(const eFloor floor)
     }
 }
 
-void Conveyor::MoveRight() const
+void Conveyor::MoveRight()
 {
+    SetState(CONVEYOR_STATUS_MOVE);
     mMotor.MoveClockWise();
 }
 
-void Conveyor::MoveLeft() const
+void Conveyor::MoveLeft()
 {
+    SetState(CONVEYOR_STATUS_MOVE);
     mMotor.MoveCounterClockWise();
 }
 
-void Conveyor::Stop() const
+void Conveyor::Stop()
 {
+    SetState(CONVEYOR_STATUS_STOP);
     mMotor.Stop();
 }
 
@@ -67,4 +72,25 @@ uint8_t Conveyor::GetIrSensorState(uint8_t index) const
     assert(index < MAX_IR_SENSOR_COUNT);
 
     return mIrSensorList[index].GetState();
+}
+
+String Conveyor::GetState() const
+{
+    return mConveyorStatus;
+}
+
+bool Conveyor::GetIsItemPassed() const
+{
+    return mIsItemPassed;
+}
+
+void Conveyor::SetIsItemPassed(bool isPassed)
+{
+    mIsItemPassed = isPassed;
+}
+
+/* private */
+void Conveyor::SetState(String status)
+{
+    mConveyorStatus = status;
 }
