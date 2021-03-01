@@ -77,8 +77,9 @@ bool Lift::MoveToFloor(eFloor floor)
     return true;
 }
 
-void Lift::StopElevateMotor() const
+void Lift::StopElevateMotor()
 {
+    SetLiftStatus(LIFT_STATUS_ARRIVED);
     mElevateMotor.Stop();
 }
 
@@ -104,7 +105,7 @@ String Lift::GetLiftStatus() const
     return mLiftStatus;
 }
 
-void Lift::SetLiftStatus(const String status)
+void Lift::SetLiftStatus(const char* status)
 {
     mLiftStatus = status;
 }
@@ -114,7 +115,7 @@ String Lift::GetLiftItemStatus() const
     return mLiftItemStatus;
 }
 
-void Lift::SetLiftItemStatus(const String status)
+void Lift::SetLiftItemStatus(const char* status)
 {
     mLiftItemStatus = status;
 }
@@ -168,7 +169,7 @@ void Lift::ElevateLift(eFloor targetFloor)
     }    
 }
 
-void Lift::SetLiftMotorStatus(const String status)
+void Lift::SetLiftMotorStatus(const char* status)
 {
     mLiftMotorStatus = status;
 }

@@ -90,7 +90,7 @@ void Conveyor::SetIsItemPassed(bool isPassed)
 }
 
 /* private */
-void Conveyor::SetState(String status)
+void Conveyor::SetState(const char* status)
 {
     mConveyorStatus = status;
 }
