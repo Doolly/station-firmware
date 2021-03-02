@@ -6,14 +6,6 @@
 #include "Hardware.h"
 #include "Motor.h"
 
-#define LIFT_STATUS_ARRIVED             ("arrived")
-#define LIFT_STATUS_WAIT                ("wait")
-#define LIFT_STATUS_MOVE                ("move")
-#define LIFT_ITEM_STATUS_NONE           ("none")
-#define LIFT_ITEM_STATUS_EXIST          ("exist")
-#define LIFT_MOTOR_STATUS_MOVE          ("move")
-#define LIFT_MOTOR_STATUS_STOP          ("stop")
-
 class Lift 
 {
 public:
@@ -27,16 +19,16 @@ public:
     void StopLiftMotor();
 
     bool MoveToFloor(eFloor floor);
-    void StopElevateMotor() const;
+    void StopElevateMotor();
 
     void UpdateCurrentFloor();
     eFloor GetCurrentFloor() const;
 
     String GetLiftStatus() const;
-    void SetLiftStatus(const String status);
+    
 
     String GetLiftItemStatus() const;
-    void SetLiftItemStatus(const String status);
+    void SetLiftItemStatus(const char* status);
 
     String GetLiftMotorStatus() const;
 
@@ -44,12 +36,26 @@ public:
 
     bool IsJamesParked() const;
     void UpdateIsJamesParked(bool flag);
+    
 
 private:
     void MoveUp() const;
     void MoveDown() const;
     void ElevateLift(eFloor targetFloor);
-    void SetLiftMotorStatus(const String status);
+
+    void SetLiftStatus(const char* status);
+    void SetLiftMotorStatus(const char* status);
+
+public:
+    static const char* LIFT_STATUS_ARRIVED;
+    static const char* LIFT_STATUS_WAIT;
+    static const char* LIFT_STATUS_MOVE;
+
+    static const char* LIFT_ITEM_STATUS_NONE;
+    static const char* LIFT_ITEM_STATUS_EXIST;
+
+    static const char* LIFT_MOTOR_STATUS_MOVE;
+    static const char* LIFT_MOTOR_STATUS_STOP;
 
 private:
     /* hardware module */
@@ -65,7 +71,5 @@ private:
     String mLiftMotorStatus;
     bool mIsJamesParked;
 };
-
-extern Lift lift;
 
 #endif /* LIFT_H */

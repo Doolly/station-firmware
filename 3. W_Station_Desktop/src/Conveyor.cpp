@@ -3,12 +3,6 @@
 #include "Conveyor.h"
 #include "Motor.h"
 
-Conveyor conveyorList[MAX_FLOOR_COUNT] = {
-    Conveyor(eFloor::FirstFloor), 
-    Conveyor(eFloor::SecondFloor), 
-    Conveyor(eFloor::ThirdFloor)
-};
-
 Conveyor::Conveyor(const eFloor floor) 
     : mFloor(floor)
     , mConveyorStatus(CONVEYOR_STATUS_STOP)

@@ -30,7 +30,7 @@ public:
     void SetIsItemPassed(bool isPassed);
 
 private:
-    void SetState(String status);
+    void SetState(const char* status);
 
 private:
     const eFloor mFloor;
@@ -42,7 +42,5 @@ private:
 
     bool mIsItemPassed;
 };
-
-extern Conveyor conveyorList[MAX_FLOOR_COUNT];
 
 #endif /* CONVEYOR_H */

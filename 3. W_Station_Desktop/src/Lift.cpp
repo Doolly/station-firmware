@@ -1,7 +1,15 @@
 #include "Configuration.h"
 #include "Lift.h"
 
-Lift lift;
+const char* Lift::LIFT_STATUS_ARRIVED = "arrived";
+const char* Lift::LIFT_STATUS_WAIT = "wait";
+const char* Lift::LIFT_STATUS_MOVE = "move";
+
+const char* Lift::LIFT_ITEM_STATUS_NONE = "none";
+const char* Lift::LIFT_ITEM_STATUS_EXIST = "exist";
+
+const char* Lift::LIFT_MOTOR_STATUS_MOVE = "move";
+const char* Lift::LIFT_MOTOR_STATUS_STOP = "stop";
 
 Lift::Lift()
     : mCurrentFloor(eFloor::FirstFloor) 
@@ -26,8 +34,8 @@ Lift::Lift()
 void Lift::Initialize()
 {
     StopLiftMotor();
-    mLiftStatus = LIFT_STATUS_WAIT;
-    mLiftItemStatus = LIFT_ITEM_STATUS_NONE;
+    mLiftStatus = Lift::LIFT_STATUS_WAIT;
+    mLiftItemStatus = Lift::LIFT_ITEM_STATUS_NONE;
 }
 
 void Lift::MoveLiftMotorToJames()
@@ -73,13 +81,13 @@ bool Lift::MoveToFloor(eFloor floor)
         return false;
     }
 
-    SetLiftStatus(LIFT_STATUS_MOVE);
+    SetLiftStatus(Lift::LIFT_STATUS_MOVE);
     return true;
 }
 
 void Lift::StopElevateMotor()
 {
-    SetLiftStatus(LIFT_STATUS_ARRIVED);
+    SetLiftStatus(Lift::LIFT_STATUS_ARRIVED);
     mElevateMotor.Stop();
 }
 
