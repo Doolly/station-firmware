@@ -3,6 +3,9 @@
 #include "Conveyor.h"
 #include "Motor.h"
 
+const char* Conveyor::CONVEYOR_STATUS_MOVE = "move";
+const char* Conveyor::CONVEYOR_STATUS_STOP = "stop";
+
 Conveyor::Conveyor(const eFloor floor) 
     : mFloor(floor)
     , mConveyorStatus(CONVEYOR_STATUS_STOP)

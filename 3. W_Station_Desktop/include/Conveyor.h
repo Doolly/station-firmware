@@ -9,9 +9,6 @@
 #include "Motor.h"
 #include "Hardware.h"
 
-#define CONVEYOR_STATUS_MOVE        ("move")
-#define CONVEYOR_STATUS_STOP        ("stop")
-
 class Conveyor
 {
 public:
@@ -28,6 +25,10 @@ public:
 
     bool GetIsItemPassed() const;
     void SetIsItemPassed(bool isPassed);
+
+public:
+    static const char* CONVEYOR_STATUS_MOVE;
+    static const char* CONVEYOR_STATUS_STOP;
 
 private:
     void SetState(const char* status);

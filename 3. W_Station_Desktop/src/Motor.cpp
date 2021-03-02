@@ -34,7 +34,7 @@ void Motor::MoveClockWise() const
     }
 
     digitalWrite(mRelaySwitchFirstPin, HIGH);
-    digitalWrite(mRelaySwitchSecondPin, HIGH);
+    digitalWrite(mRelaySwitchSecondPin, LOW);
 }
 
 void Motor::MoveCounterClockWise() const
@@ -45,7 +45,7 @@ void Motor::MoveCounterClockWise() const
     }
 
     digitalWrite(mRelaySwitchFirstPin, LOW);
-    digitalWrite(mRelaySwitchSecondPin, LOW);
+    digitalWrite(mRelaySwitchSecondPin, HIGH);
 }
 
 void Motor::Stop() const
@@ -56,5 +56,5 @@ void Motor::Stop() const
     }
     
     digitalWrite(mRelaySwitchFirstPin, HIGH);
-    digitalWrite(mRelaySwitchSecondPin, LOW);
+    digitalWrite(mRelaySwitchSecondPin, HIGH);
 }

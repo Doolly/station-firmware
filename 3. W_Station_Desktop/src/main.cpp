@@ -50,9 +50,9 @@ std_msgs::String liftItemStatus;
 ros::Publisher publishLiftItemState("wstation/lift_item_status", &liftItemStatus);
 
 /* ros - subscriber */
-ros::Subscriber<std_msgs::Int8> subscribeLiftDestinationFloor("wstation/lift_destination_floor", SubscribeLiftDestinationFloor);
-ros::Subscriber<std_msgs::String> subscribePushItemToLift("wstation/push_item_to_lift", SubscribePushItemToLift);
-ros::Subscriber<std_msgs::String> subscribeSendToDestination("wstation/send_to_destination", SubscribeSendToDestination);
+ros::Subscriber<std_msgs::Int8> subscribeLiftDestinationFloor("wstation/lift_destination_floor", SubscribeLiftDestinationFloor); // "1", "2", "3"
+ros::Subscriber<std_msgs::String> subscribePushItemToLift("wstation/push_item_to_lift", SubscribePushItemToLift); // "push", "none"
+ros::Subscriber<std_msgs::String> subscribeSendToDestination("wstation/send_to_destination", SubscribeSendToDestination); // "james", "tray", "none"
 
 void setup() 
 {
@@ -77,9 +77,6 @@ void setup()
 
     Timer1.initialize(PUBLISH_PERIOD_US);                
     Timer1.attachInterrupt(PublishISR);
-
-    Timer3.initialize(SUBSCRIBE_PERIOD_US);              
-    Timer3.attachInterrupt(SubscribeISR);
 }
 
 /* global hardware instance */
@@ -97,6 +94,11 @@ bool led2Toggle = false;
 bool led3Toggle = false;
 bool led4Toggle = false;
 
+void DebugLed1Toggle();
+void DebugLed2Toggle();
+void DebugLed3Toggle();
+void DebugLed4Toggle();
+
 void loop() 
 {
     lift.UpdateCurrentFloor();
@@ -111,51 +113,50 @@ void loop()
         PublishLiftStatus();
         PublishLiftItemStatus();
 
-        led1Toggle = !led1Toggle;
-        digitalWrite(DEBUG_LED1_PIN, led1Toggle);
+        DebugLed1Toggle();
     }
 
     /* subscribe */
-    if (isSubscribeValidate == true) 
-    {
-        isSubscribeValidate = false;
-        nodeHandle.spinOnce();
+    nodeHandle.spinOnce();
 
-        /* subscribe -> lift_destination_floor */
-        if (gIsSubscribeLiftDestinationFloor == true) 
+    /* subscribe -> lift_destination_floor */
+    if (gIsSubscribeLiftDestinationFloor == true) 
+    {
+        gIsSubscribeLiftDestinationFloor = false;
+        
+        String status = lift.GetLiftStatus();
+        if (status == Lift::LIFT_STATUS_WAIT || status == Lift::LIFT_STATUS_ARRIVED) 
         {
-            gIsSubscribeLiftDestinationFloor = false;
-            
-            String status = lift.GetLiftStatus();
             lift.MoveToFloor(gTargetFloor);
         }
+    }
 
-        /* subscribe -> push_item_to_lift */
-        if (gIsSubscribePushItemToLift == true)
+    /* subscribe -> push_item_to_lift */
+    if (gIsSubscribePushItemToLift == true)
+    {
+        gIsSubscribePushItemToLift = false;
+
+        currentConveyor = &(conveyorList[static_cast<uint8_t>(lift.GetCurrentFloor()) - 1]);
+        currentConveyor->MoveLeft();
+    }
+
+    /* subscribe -> send_to_destination */
+    if (gIsSubscribeSendToDestination == true)
+    {
+        gIsSubscribeSendToDestination = false;
+
+        if (lift.GetLiftStatus() == Lift::LIFT_STATUS_ARRIVED && lift.GetLiftItemStatus() == Lift::LIFT_ITEM_STATUS_EXIST)
         {
-            gIsSubscribePushItemToLift = false;
-
-            currentConveyor = &(conveyorList[static_cast<uint8_t>(lift.GetCurrentFloor()) - 1]);
-            currentConveyor->MoveLeft();
-        }
-
-        if (gIsSubscribeSendToDestination == true)
-        {
-            gIsSubscribeSendToDestination = false;
-
-            if (lift.GetLiftStatus() == Lift::LIFT_STATUS_ARRIVED && lift.GetLiftItemStatus() == Lift::LIFT_ITEM_STATUS_EXIST)
+            if (gDestination == COMMAND_SEND_TO_JAMES)
             {
-                if (gDestination == COMMAND_SEND_TO_JAMES)
+                if (lift.IsJamesParked() == true)
                 {
-                    if (lift.IsJamesParked() == true)
-                    {
-                        lift.MoveLiftMotorToJames();
-                    }
+                    lift.MoveLiftMotorToJames();
                 }
-                else // recved "tray"
-                {
-                    lift.MoveLiftMotorToTray();
-                }
+            }
+            else // recved "tray"
+            {
+                lift.MoveLiftMotorToTray();
             }
         }
     }
@@ -246,7 +247,7 @@ void CheckItemIsPushedToLift()
 {
     if (currentConveyor != nullptr) 
     {
-        if (currentConveyor->GetState() == CONVEYOR_STATUS_MOVE)
+        if (currentConveyor->GetState() == Conveyor::CONVEYOR_STATUS_MOVE)
         {
             if (lift.IsItemPassed() == true) 
             {
@@ -291,6 +292,8 @@ void CheckItemIsPushedToDestination()
             {
                 conveyorList[static_cast<uint8_t>(eFloor::FirstFloor)].SetIsItemPassed(false);
                 lift.Initialize();
+
+                /* 1층 컨베이어를 어느정도 움직여 줘야 함! */
             }
         }
     }
@@ -320,6 +323,35 @@ void SubscribePushItemToLift(const std_msgs::String& flag)
 
 void SubscribeSendToDestination(const std_msgs::String& dest)
 {
+    if (strcmp(dest.data, COMMAND_NONE) == 0)
+    {
+        return;
+    }
+
     gDestination = dest.data;
     gIsSubscribeSendToDestination = true;
+}
+
+void DebugLed1Toggle()
+{
+    led1Toggle = !led1Toggle;
+    digitalWrite(DEBUG_LED1_PIN, led1Toggle);
+}
+
+void DebugLed2Toggle()
+{
+    led2Toggle = !led2Toggle;
+    digitalWrite(DEBUG_LED2_PIN, led2Toggle);
+}
+
+void DebugLed3Toggle()
+{
+    led3Toggle = !led3Toggle;
+    digitalWrite(DEBUG_LED3_PIN, led3Toggle);
+}
+
+void DebugLed4Toggle()
+{
+    led4Toggle = !led4Toggle;
+    digitalWrite(DEBUG_LED4_PIN, led4Toggle);
 }

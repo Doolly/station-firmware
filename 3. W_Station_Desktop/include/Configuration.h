@@ -5,8 +5,7 @@
 #include <Arduino.h>
 
 /* Timer Task */
-#define PUBLISH_PERIOD_US           (300000U)       /* 10Hz */
-#define SUBSCRIBE_PERIOD_US         (500000U)       /* 2Hz */
+#define PUBLISH_PERIOD_US           (100000U)       /* 10Hz - 100ms */
 
 /* Conveyor */
 #define MAX_FLOOR_COUNT             (3U)

@@ -24,5 +24,5 @@ bool LevelSwitch::GetState() const
         return false;
     }
 
-    return !digitalRead(mReadPin);
+    return digitalRead(mReadPin);
 }
