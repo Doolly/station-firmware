@@ -1,10 +1,17 @@
 #ifndef LIFT_H
 #define LIFT_H
 
+#include "Conveyor.h"
 #include "IrSensor.h"
 #include "LevelSwitch.h"
 #include "Hardware.h"
-#include "Motor.h"
+
+enum class eLiftStatus 
+{
+    ARRIVED,
+    UP,
+    DOWN
+};
 
 class Lift 
 {
@@ -12,64 +19,45 @@ public:
     Lift();
     virtual ~Lift() = default;
 
-    void Initialize();
-    
-    void MoveLiftMotorToJames();
-    void MoveLiftMotorToTray();
-    void StopLiftMotor();
-
-    bool MoveToFloor(eFloor floor);
-    void StopElevateMotor();
-
-    void UpdateCurrentFloor();
+    Conveyor& GetConveyor();
     eFloor GetCurrentFloor() const;
+    eLiftStatus GetLiftStatus() const;
+    bool GetLiftItemStatus() const;
+    void SetLiftItemStatus(bool status);
+    bool GetIrStatus() const;
+    int8_t GetLevelSwitchStatus(uint8_t index) const;
 
-    String GetLiftStatus() const;
-    
-
-    String GetLiftItemStatus() const;
-    void SetLiftItemStatus(const char* status);
-
-    String GetLiftMotorStatus() const;
-
-    bool IsItemPassed() const;
+    void Reset();
+    bool MoveToFloor(eFloor targetFloor);
+    void StopElevateMotor();
+    void UpdateCurrentFloor();
 
     bool IsJamesParked() const;
-    void UpdateIsJamesParked(bool flag);
-    
+    void UpdateJamesParked(bool bJamesParked);
 
 private:
     void MoveUp() const;
     void MoveDown() const;
     void ElevateLift(eFloor targetFloor);
 
-    void SetLiftStatus(const char* status);
-    void SetLiftMotorStatus(const char* status);
-
 public:
-    static const char* LIFT_STATUS_ARRIVED;
-    static const char* LIFT_STATUS_WAIT;
-    static const char* LIFT_STATUS_MOVE;
+    static const String liftStatusList[MAX_LIFT_STATUS_LIST];
 
-    static const char* LIFT_ITEM_STATUS_NONE;
-    static const char* LIFT_ITEM_STATUS_EXIST;
-
-    static const char* LIFT_MOTOR_STATUS_MOVE;
-    static const char* LIFT_MOTOR_STATUS_STOP;
+    eFloor mCurrentFloor;
 
 private:
     /* hardware module */
     Motor mElevateMotor;
-    Motor mLiftMotor;
+    Conveyor mLiftConveyor;
+    LevelSwitch mLevelSwitchList[MAX_LEVEL_SWITCH_COUNT]; 
     IrSensor mLiftIrSensor;
-    LevelSwitch mLevelSwitchList[MAX_LEVEL_SWITCH_COUNT];
 
-    eFloor mCurrentFloor;
+    /*  state variable */
+    
+    eLiftStatus mLiftStatus;
 
-    String mLiftStatus;
-    String mLiftItemStatus;
-    String mLiftMotorStatus;
-    bool mIsJamesParked;
+    bool mbLiftItemStatus;
+    bool mbJamesParked;
 };
 
 #endif /* LIFT_H */

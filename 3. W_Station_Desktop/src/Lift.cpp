@@ -1,69 +1,80 @@
 #include "Configuration.h"
 #include "Lift.h"
 
-const char* Lift::LIFT_STATUS_ARRIVED = "arrived";
-const char* Lift::LIFT_STATUS_WAIT = "wait";
-const char* Lift::LIFT_STATUS_MOVE = "move";
-
-const char* Lift::LIFT_ITEM_STATUS_NONE = "none";
-const char* Lift::LIFT_ITEM_STATUS_EXIST = "exist";
-
-const char* Lift::LIFT_MOTOR_STATUS_MOVE = "move";
-const char* Lift::LIFT_MOTOR_STATUS_STOP = "stop";
+/* initialize static variable */
+const String Lift::liftStatusList[MAX_LIFT_STATUS_LIST] = {
+    String("arrived"),
+    String("up"),
+    String("down")
+};
 
 Lift::Lift()
-    : mCurrentFloor(eFloor::FirstFloor) 
-    , mLiftStatus(LIFT_STATUS_WAIT)
-    , mLiftItemStatus(LIFT_ITEM_STATUS_NONE)
-    , mLiftMotorStatus(LIFT_MOTOR_STATUS_STOP)
-    , mIsJamesParked(false)
+    : mElevateMotor(ELEVATE_MOTOR_PWM_PIN, ELEVATE_MOTOR_DIR_PIN, eMotorMode::MOTOR_PWM)
+    , mLiftConveyor(LIFT_CONVEYOR_MOTOR_RELAY_SWITCH1_PIN, LIFT_CONVEYOR_MOTOR_RELAY_SWITCH2_PIN)
+    , mLevelSwitchList({ LevelSwitch(FLOOR1_LIMITED_SWITCH_READ_PIN), LevelSwitch(FLOOR2_LIMITED_SWITCH_READ_PIN), LevelSwitch(FLOOR3_LIMITED_SWITCH_READ_PIN), LevelSwitch(FLOOR3_CEILING_LIMITED_SWITCH_READ_PIN) })
+    , mLiftIrSensor(LIFT_IR_READ_PIN, LIFT_IR_LED_PIN)
+    , mCurrentFloor(eFloor::FirstFloor)
+    , mLiftStatus(eLiftStatus::ARRIVED)
+    , mbLiftItemStatus(false)
+    , mbJamesParked(false)
 {
-    mElevateMotor.SetPin(ELEVATE_MOTOR_RELAY_SWITCH1_PIN, ELEVATE_MOTOR_RELAY_SWITCH2_PIN);
-    mLiftMotor.SetPin(LIFT_CONVEYOR_MOTOR_RELAY_SWITCH1_PIN, LIFT_CONVEYOR_MOTOR_RELAY_SWITCH2_PIN);
 
-    mLiftIrSensor.SetReadPin(LIFT_IR_READ_PIN);
-    mLiftIrSensor.SetLightPin(LIFT_IR_LED_PIN);
-
-    mLevelSwitchList[0].SetReadPin(FLOOR1_LIMITED_SWITCH_READ_PIN);
-    mLevelSwitchList[1].SetReadPin(FLOOR2_LIMITED_SWITCH_READ_PIN);
-    mLevelSwitchList[2].SetReadPin(FLOOR3_LIMITED_SWITCH_READ_PIN);
-
-    UpdateCurrentFloor();
-}
-
-void Lift::Initialize()
-{
-    StopLiftMotor();
-    mLiftStatus = Lift::LIFT_STATUS_WAIT;
-    mLiftItemStatus = Lift::LIFT_ITEM_STATUS_NONE;
-}
-
-void Lift::MoveLiftMotorToJames()
-{
-    if (IsJamesParked() == false) 
+    /* TODO: initialize current floor */
+    /*
+    while (mLevelSwitchList[0].GetState() == false) 
     {
-        return;
+        MoveDown();
     }
+    StopElevateMotor();
+    */
 
-    SetLiftMotorStatus(LIFT_MOTOR_STATUS_MOVE);
-    mLiftMotor.MoveClockWise();
+    /*
+    if (mLevelSwitchList[0].GetState() == true) 
+    {
+        mCurrentFloor = eFloor::FirstFloor;
+    }
+    else if (mLevelSwitchList[3].GetState() == true) 
+    {
+        mCurrentFloor = eFloor::ThirdFloor;
+    }
+    else 
+    {
+        if (mLevelSwitchList[1].GetState() == true && mLevelSwitchList[2].GetState() == true)
+        {
+            mCurrentFloor = eFloor::SecondFloor;
+        }
+        else
+        {
+
+        }
+    }
+    */
 }
 
-void Lift::MoveLiftMotorToTray()
+void Lift::Reset()
 {
-    SetLiftMotorStatus(LIFT_MOTOR_STATUS_MOVE);
-    mLiftMotor.MoveCounterClockWise();
+    mLiftConveyor.Stop();
+    mLiftStatus = eLiftStatus::ARRIVED;
+    mbLiftItemStatus = false;
 }
 
-void Lift::StopLiftMotor()
+bool Lift::MoveToFloor(eFloor targetFloor)
 {
-    SetLiftMotorStatus(LIFT_MOTOR_STATUS_STOP);
-    mLiftMotor.Stop();
-}
-
-bool Lift::MoveToFloor(eFloor floor)
-{
-    switch (floor)
+    /* Define move up & down */ 
+    if (mCurrentFloor < targetFloor) 
+    {
+        mLiftStatus = eLiftStatus::UP;
+    }
+    else if (mCurrentFloor > targetFloor)
+    {
+        mLiftStatus = eLiftStatus::DOWN;
+    }
+    else 
+    {
+        mLiftStatus = eLiftStatus::ARRIVED;
+    }
+    
+    switch (targetFloor)
     {
     case eFloor::FirstFloor:
         ElevateLift(eFloor::FirstFloor);
@@ -81,26 +92,43 @@ bool Lift::MoveToFloor(eFloor floor)
         return false;
     }
 
-    SetLiftStatus(Lift::LIFT_STATUS_MOVE);
     return true;
 }
 
 void Lift::StopElevateMotor()
 {
-    SetLiftStatus(Lift::LIFT_STATUS_ARRIVED);
+    mLiftStatus = eLiftStatus::ARRIVED;
     mElevateMotor.Stop();
+
+    digitalWrite(DEBUG_LED3_PIN, LOW);
+    digitalWrite(DEBUG_LED4_PIN, LOW);
 }
 
 void Lift::UpdateCurrentFloor()
 {
-    for (uint8_t i = 0; i < MAX_LEVEL_SWITCH_COUNT; ++i)
+    /* Check current floor! */
+    uint8_t floor = static_cast<uint8_t>(mCurrentFloor);
+
+    // LevelSwitch & floor starts at 0
+    if (mLiftStatus == eLiftStatus::UP) 
     {
-        if (mLevelSwitchList[i].GetState() == true)
+        if (mLevelSwitchList[floor + 2].GetState() == true) 
         {
-            mCurrentFloor = static_cast<eFloor>(i + 1);
-            break;
+            mCurrentFloor = static_cast<eFloor>(floor + 1);
         }
     }
+    else if (mLiftStatus == eLiftStatus::DOWN)
+    {
+        if (mLevelSwitchList[floor - 1].GetState() == true) 
+        {
+            mCurrentFloor = static_cast<eFloor>(floor - 1);
+        }
+    }
+}
+
+Conveyor& Lift::GetConveyor()
+{
+    return mLiftConveyor;
 }
 
 eFloor Lift::GetCurrentFloor() const
@@ -108,76 +136,71 @@ eFloor Lift::GetCurrentFloor() const
     return mCurrentFloor;
 }
 
-String Lift::GetLiftStatus() const
+eLiftStatus Lift::GetLiftStatus() const
 {
     return mLiftStatus;
 }
 
-void Lift::SetLiftStatus(const char* status)
+bool Lift::GetLiftItemStatus() const
 {
-    mLiftStatus = status;
+    return mbLiftItemStatus;
 }
 
-String Lift::GetLiftItemStatus() const
+void Lift::SetLiftItemStatus(bool status)
 {
-    return mLiftItemStatus;
+    mbLiftItemStatus = status;
 }
 
-void Lift::SetLiftItemStatus(const char* status)
-{
-    mLiftItemStatus = status;
-}
-
-String Lift::GetLiftMotorStatus() const
-{
-    return mLiftMotorStatus;
-}
-
-bool Lift::IsItemPassed() const
+bool Lift::GetIrStatus() const
 {
     return mLiftIrSensor.GetState();
 }
 
-bool Lift::IsJamesParked() const
+int8_t Lift::GetLevelSwitchStatus(uint8_t index) const
 {
-    return mIsJamesParked;
+    return mLevelSwitchList[index].GetState();
 }
 
-void Lift::UpdateIsJamesParked(bool isJamesParked)
+bool Lift::IsJamesParked() const
 {
-    mIsJamesParked = isJamesParked;
+    return mbJamesParked;
+}
+
+void Lift::UpdateJamesParked(bool bJamesParked)
+{
+    mbJamesParked = bJamesParked;
 }
 
 /* private */
 void Lift::MoveUp() const
 {
     mElevateMotor.MoveClockWise();
+
+    /* debug */
+    digitalWrite(DEBUG_LED3_PIN, HIGH);
 }
 
 void Lift::MoveDown() const
 {
     mElevateMotor.MoveCounterClockWise();
+
+    /* debug */
+    digitalWrite(DEBUG_LED4_PIN, HIGH);
 }
 
 void Lift::ElevateLift(eFloor targetFloor)
 {
-    if (mCurrentFloor == targetFloor)
+    if (targetFloor == mCurrentFloor)
     {
         StopElevateMotor();
-        return;
-    }
-
-    if (targetFloor < mCurrentFloor) 
+    } 
+    else if (targetFloor < mCurrentFloor) 
     {
         MoveDown();
     }
     else
     {
         MoveUp();
-    }    
+    }
 }
 
-void Lift::SetLiftMotorStatus(const char* status)
-{
-    mLiftMotorStatus = status;
-}

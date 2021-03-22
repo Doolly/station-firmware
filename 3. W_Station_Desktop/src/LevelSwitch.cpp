@@ -1,21 +1,23 @@
 #include "LevelSwitch.h"
 
-LevelSwitch::LevelSwitch()
-    : mReadPin(-1)
+LevelSwitch::LevelSwitch(uint8_t readPin)
+    : mReadPin(readPin)
 {
-
+    pinMode(readPin, INPUT);
 }
 
-void LevelSwitch::SetReadPin(int8_t readPin)
+/*
+void LevelSwitch::SetReadPin(uint8_t readPin)
 {
     if (readPin < 0) 
     {
         return;
     }
 
-    pinMode(readPin, INPUT_PULLUP);
+    pinMode(readPin, INPUT);
     mReadPin = readPin;
 }
+*/
 
 bool LevelSwitch::GetState() const
 {

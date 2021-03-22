@@ -6,21 +6,22 @@
 class IrSensor
 {
 public:
-    IrSensor();
+    IrSensor() = delete;
+    IrSensor(uint8_t readPin, uint8_t lightPin);
     virtual ~IrSensor() = default;
 
-    void SetReadPin(const int8_t readPin);
+    //void SetReadPin(const uint8_t readPin);
+    //void SetLightPin(uint8_t lightPin);
 
     bool GetLight() const;
-    void SetLightPin(int8_t lightPin);
     void SetLight(const bool state);
 
     bool GetState() const;
 
 private:
-    int8_t mReadPin;
-    int8_t mLightPin;
-    bool mIsLightOn;
+    uint8_t mReadPin;
+    uint8_t mLightPin;
+    bool mbLightOn;
 };
 
 #endif /* IRSENSOR_H */

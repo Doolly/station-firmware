@@ -2,46 +2,43 @@
 #define CONVEYOR_H
 
 #include <Arduino.h>
-#include <std_msgs/Int8MultiArray.h>
 
 #include "Configuration.h"
 #include "IrSensor.h"
 #include "Motor.h"
 #include "Hardware.h"
 
+enum class eConveyorStatus {
+    STOP,
+    LEFT,
+    RIGHT
+};
+
 class Conveyor
 {
 public:
     Conveyor() = delete;
-    Conveyor(const eFloor floor);
+    Conveyor(uint8_t motorFirstPin, uint8_t motorSecondPin);
     virtual ~Conveyor() = default;
 
     void MoveRight();
     void MoveLeft();
     void Stop();
     
-    uint8_t GetIrSensorState(uint8_t index) const;
-    String GetState() const;
+    eConveyorStatus GetStatus() const;
 
-    bool GetIsItemPassed() const;
-    void SetIsItemPassed(bool isPassed);
+    bool IsItemPassed() const;
+    void SetItemPassed(bool bPassed);
 
 public:
-    static const char* CONVEYOR_STATUS_MOVE;
-    static const char* CONVEYOR_STATUS_STOP;
+    static const String conveyorStatusList[MAX_CONVEYOR_STATUS_LIST];
 
 private:
-    void SetState(const char* status);
-
-private:
-    const eFloor mFloor;
-
-    IrSensor mIrSensorList[MAX_IR_SENSOR_COUNT];
     Motor mMotor;
-
-    String mConveyorStatus;
-
-    bool mIsItemPassed;
+    
+    const eFloor mFloor;
+    eConveyorStatus mConveyorStatus;
+    bool mbItemPassed;
 };
 
 #endif /* CONVEYOR_H */

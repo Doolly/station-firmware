@@ -1,14 +1,15 @@
 #include "IrSensor.h"
 
-IrSensor::IrSensor()
-    : mReadPin(-1)
-    , mLightPin(-1)
-    , mIsLightOn(false)
+IrSensor::IrSensor(uint8_t readPin, uint8_t lightPin)
+    : mReadPin(readPin)
+    , mLightPin(lightPin)
+    , mbLightOn(false)
 {
-
+    pinMode(readPin, INPUT_PULLUP);
 }
 
-void IrSensor::SetReadPin(const int8_t readPin)
+/*
+void IrSensor::SetReadPin(const uint8_t readPin)
 {
     if (readPin < 0)
     {
@@ -18,13 +19,10 @@ void IrSensor::SetReadPin(const int8_t readPin)
     pinMode(readPin, INPUT_PULLUP);
     mReadPin = readPin;
 }
+*/
 
-bool IrSensor::GetLight() const
-{
-    return mIsLightOn;
-}
-
-void IrSensor::SetLightPin(int8_t lightPin)
+/*
+void IrSensor::SetLightPin(uint8_t lightPin)
 {
     if (lightPin < 0)
     {
@@ -34,6 +32,12 @@ void IrSensor::SetLightPin(int8_t lightPin)
     pinMode(lightPin, OUTPUT);
     mLightPin = lightPin;
 }
+*/
+
+bool IrSensor::GetLight() const
+{
+    return mbLightOn;
+}
 
 void IrSensor::SetLight(const bool state)
 {
@@ -42,11 +46,11 @@ void IrSensor::SetLight(const bool state)
         return;
     }
 
-    if (mIsLightOn == state) {
+    if (mbLightOn == state) {
         return;
     }
 
-    mIsLightOn = state;
+    mbLightOn = state;
     digitalWrite(mLightPin, state);
 }
 

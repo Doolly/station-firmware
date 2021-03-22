@@ -6,14 +6,15 @@
 class LevelSwitch
 {
 public:
-    LevelSwitch();
+    LevelSwitch() = delete;
+    LevelSwitch(uint8_t readPin);
     virtual ~LevelSwitch() = default;
 
-    void SetReadPin(int8_t readPin);
+    //void SetReadPin(uint8_t readPin);
     bool GetState() const;
 
 private:
-    int8_t mReadPin;
+    uint8_t mReadPin;
 };
 
 #endif /* LEVEL_SWITCH_H */
