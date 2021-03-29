@@ -22,6 +22,9 @@
 #define ANALOG_LOW                          (0U)
 #define ANALOG_HIGH                         (65535U)
 
+#define ELEVATE_MOTOR_SPEED                 (30U)
+
+
 /* Floor */
 enum class eFloor : uint8_t
 {

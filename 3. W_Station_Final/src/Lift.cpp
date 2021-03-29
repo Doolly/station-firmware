@@ -42,7 +42,7 @@ Lift::Lift()
     }
 
    /* setting lift break */
-   pinMode(ELEVATE_MOTOR_BREAK_PIN, OUTPUT);
+   //pinMode(ELEVATE_MOTOR_BREAK_PIN, OUTPUT);
    analogWrite(ELEVATE_MOTOR_BREAK_PIN, ANALOG_LOW);
 }
 
@@ -97,7 +97,7 @@ void Lift::StopElevateMotor()
     mElevateMotor.Stop();
 
     /* break on */
-    analogWrite(ELEVATE_MOTOR_BREAK_PIN, ANALOG_LOW);
+    //analogWrite(ELEVATE_MOTOR_BREAK_PIN, ANALOG_LOW);
 }
 
 void Lift::UpdateCurrentFloor()

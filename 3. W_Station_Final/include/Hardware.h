@@ -13,18 +13,18 @@
 // 정 68, 역 69
 
 /* Conveyor Motor - Relay */
-#define FLOOR1_MOTOR_RELAY_SWITCH1_PIN                  (5U)  
+#define FLOOR1_MOTOR_RELAY_SWITCH1_PIN                  (5U)  // cw
 #define FLOOR2_MOTOR_RELAY_SWITCH1_PIN                  (66U) 
 #define FLOOR3_MOTOR_RELAY_SWITCH1_PIN                  (67U) 
 
-#define LIFT_CONVEYOR_MOTOR_RELAY_SWITCH1_PIN           (62U) //62 정
-#define LIFT_CONVEYOR_MOTOR_RELAY_SWITCH2_PIN           (63U) //63 역
+#define LIFT_CONVEYOR_MOTOR_RELAY_SWITCH1_PIN           (63U) //63 정
+#define LIFT_CONVEYOR_MOTOR_RELAY_SWITCH2_PIN           (62U) //62 역
 
 /* Elevate Motor - PWM */
 #define ELEVATE_MOTOR_PWM_PIN                           (2U)  // P2
-#define ELEVATE_MOTOR_BREAK_PIN                         (A6) 
-#define ELEVATE_MOTOR_CW_PIN                            (11U) // P11
-#define ELEVATE_MOTOR_CCW_PIN                           (12U) // P12
+#define ELEVATE_MOTOR_BREAK_PIN                         (6U) 
+#define ELEVATE_MOTOR_CW_PIN                            (11U) // P12 - 
+#define ELEVATE_MOTOR_CCW_PIN                           (12U) // P11 -
 
 /* IR */
 #define LIFT_IR_READ_PIN                                (37U) 

@@ -37,7 +37,7 @@ public:
 
     void EmergencyStop();
 
-private:
+//private:
     void MoveUp() const;
     void MoveDown() const;
     void ElevateLift(eFloor targetFloor);

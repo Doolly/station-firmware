@@ -3,6 +3,7 @@
 LevelSwitch::LevelSwitch(uint8_t readPin)
     : mReadPin(readPin)
 {
+    pinMode(readPin, INPUT_PULLUP);
 }
 
 bool LevelSwitch::GetState() const

@@ -92,7 +92,7 @@ volatile bool gbEmergency = false;
 Lift gLift;
 
 Conveyor gConveyorList[MAX_FLOOR_COUNT] = {
-    Conveyor(FLOOR1_MOTOR_RELAY_SWITCH1_PIN, -1, eFloor::FirstFloor), 
+    Conveyor(-1, FLOOR1_MOTOR_RELAY_SWITCH1_PIN, eFloor::FirstFloor), 
     Conveyor(FLOOR2_MOTOR_RELAY_SWITCH1_PIN, -1, eFloor::SecondFloor), 
     Conveyor(FLOOR3_MOTOR_RELAY_SWITCH1_PIN, -1, eFloor::ThirdFloor)
 };
@@ -145,16 +145,21 @@ void setup()
     Timer1.attachInterrupt(PublishISR);
 
     /* lift의 생성자에서 while문을 실행하면 도중에 blocking 됨 - 리프트는 무조건 1층에서 시작 */
-    if (gLift.GetCurrentFloor() != eFloor::FirstFloor) 
-    {
-        while (gLift.GetCurrentFloor() != eFloor::FirstFloor)
-        {
-            gLift.MoveToFloor(eFloor::FirstFloor);
-            gLift.UpdateCurrentFloor();
-        }
-        gLift.StopElevateMotor();
-    }
+    // if (gLift.GetCurrentFloor() != eFloor::FirstFloor) 
+    // {
+    //     while (gLift.GetCurrentFloor() != eFloor::FirstFloor)
+    //     {
+    //         gLift.MoveToFloor(eFloor::FirstFloor);
+    //         gLift.UpdateCurrentFloor();
+    //     }
+    //     gLift.StopElevateMotor();
+    // }
 }
+
+LevelSwitch lvSwitch0(FLOOR1_LIMITED_SWITCH_READ_PIN);
+LevelSwitch lvSwitch1(FLOOR2_LIMITED_SWITCH_READ_PIN);
+LevelSwitch lvSwitch2(FLOOR3_LIMITED_SWITCH_READ_PIN);
+LevelSwitch lvSwitch3(FLOOR3_CEILING_LIMITED_SWITCH_READ_PIN);
 
 void loop() 
 {
@@ -168,18 +173,26 @@ void loop()
         delay(1000);
         gLift.GetConveyor().Stop();
         delay(1000);
-    }
-    */
+    
+    */    
 
-   LevelSwitch lvSwitch0(FLOOR1_LIMITED_SWITCH_READ_PIN);
-   LevelSwitch lvSwitch1(FLOOR2_LIMITED_SWITCH_READ_PIN);
-   LevelSwitch lvSwitch2(FLOOR3_LIMITED_SWITCH_READ_PIN);
-   LevelSwitch lvSwitch3(FLOOR3_CEILING_LIMITED_SWITCH_READ_PIN);
+   //analogWrite(ELEVATE_MOTOR_BREAK_PIN, ANALOG_HIGH);
+   //digitalWrite(ELEVATE_MOTOR_CW_PIN, HIGH);
    
-
    while (true)
-   {
+   {   
+       
+        gLift.MoveUp();
+        delay(1000);
+
+        //gLift.MoveDown();
+        //delay(2000);
+
+        gLift.StopElevateMotor();
+        while(true);
+        
         /* 1. Level Switch, Lift IR, Conveyor IR Test */
+        /*
         if (lvSwitch0.GetState() == true) 
         {
             digitalWrite(DEBUG_LED1_PIN, HIGH);
@@ -215,6 +228,14 @@ void loop()
         {
             digitalWrite(DEBUG_LED4_PIN, LOW);
         }
+        */
+        
+
+        /* main LED */
+        //digitalWrite(LIFT_IR_LED_PIN, HIGH);
+        // delay(5000);
+        // digitalWrite(LIFT_IR_LED_PIN, LOW);
+        // delay(5000);
 
         /*
         if (gLift.GetIrStatus() == true)
@@ -225,7 +246,10 @@ void loop()
         {
             digitalWrite(DEBUG_LED1_PIN, LOW);
         }
+        */
+        
 
+        /*
         for (int index = 0; index < MAX_FLOOR_COUNT; ++index)
         {
             for (int irIndex = 0; irIndex < 5; ++irIndex)
@@ -243,26 +267,27 @@ void loop()
         */
        
         /* 2. Conveyor Test */
-        /*
-        gConveyorList[0].MoveLeft();
-        delay(5000);
-        gConveyorList[0].Stop();
-        delay(5000);
+        // gConveyorList[0].MoveRight();
+        // delay(5000);
+        // gConveyorList[0].Stop();
+        // delay(5000);
 
-        gConveyorList[1].MoveLeft();
-        delay(5000);
-        gConveyorList[1].Stop();
-        delay(5000);
+        // INFO : second floor not working 
+        // gConveyorList[1].MoveLeft();
+        // delay(5000);
+        // gConveyorList[1].Stop();
+        // delay(5000);
 
-        gConveyorList[2].MoveLeft();
-        delay(5000);
-        gConveyorList[2].Stop();
-        delay(5000);
-        */
+        // gConveyorList[2].MoveLeft();
+        // delay(5000);
+        // gConveyorList[2].Stop();
+        // delay(5000);
+        
 
         /* 3. Lift Test */
-        /*
+        
         // Up Down
+        /*
         gLift.MoveToFloor(eFloor::FirstFloor);
         while (gLift.GetCurrentFloor() != eFloor::FirstFloor)
         {
@@ -290,18 +315,15 @@ void loop()
             gLift.UpdateCurrentFloor();
         }
         gLift.StopElevateMotor();
-
-        // Left Right
-        gLift.GetConveyor().MoveLeft();
-        delay(5000);
-        gLift.GetConveyor().MoveRight();
-        delay(5000);
-        gLift.GetConveyor().Stop();
-
-        while (true)
-        {
-        }
         */
+
+        // Lift Conveyor Left Right
+        // gLift.GetConveyor().MoveLeft();
+        // delay(5000);
+        // gLift.GetConveyor().MoveRight();
+        // delay(5000);
+        // gLift.GetConveyor().Stop();
+        // delay(5000);
    }
 
     gLift.UpdateCurrentFloor();
