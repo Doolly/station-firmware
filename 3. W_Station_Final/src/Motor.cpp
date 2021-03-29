@@ -42,8 +42,6 @@ void Motor::MoveClockWise() const
     }
     else // eMotorMode::MOTOR_PWM
     {
-        digitalWrite(DEBUG_LED1_PIN, HIGH);
-
         //digitalWrite(mSecondPin, HIGH); 
         digitalWrite(mThirdPin, HIGH);
 
@@ -67,8 +65,6 @@ void Motor::MoveCounterClockWise() const
     }
     else // eMotorMode::MOTOR_PWM
     {
-        digitalWrite(DEBUG_LED2_PIN, HIGH);
-
         //digitalWrite(mSecondPin, HIGH); 
         digitalWrite(mThirdPin, LOW);
 
@@ -93,8 +89,5 @@ void Motor::Stop() const
     else // eMotorMode::MOTOR_PWM
     {
         analogWrite(mFirstPin, 0);
-        
-        digitalWrite(mSecondPin, LOW); 
-        digitalWrite(mThirdPin, LOW);
     }
 }

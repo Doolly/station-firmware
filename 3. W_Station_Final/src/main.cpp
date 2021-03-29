@@ -179,17 +179,17 @@ void loop()
    //analogWrite(ELEVATE_MOTOR_BREAK_PIN, ANALOG_HIGH);
    //digitalWrite(ELEVATE_MOTOR_CW_PIN, HIGH);
    
-   while (true)
-   {   
+   //while (true)
+   //{   
        
-        gLift.MoveUp();
-        delay(1000);
+        // gLift.MoveUp();
+        // delay(1000);
 
         //gLift.MoveDown();
         //delay(2000);
 
-        gLift.StopElevateMotor();
-        while(true);
+        // gLift.StopElevateMotor();
+        // while(true);
         
         /* 1. Level Switch, Lift IR, Conveyor IR Test */
         /*
@@ -324,7 +324,7 @@ void loop()
         // delay(5000);
         // gLift.GetConveyor().Stop();
         // delay(5000);
-   }
+    //}
 
     gLift.UpdateCurrentFloor();
     

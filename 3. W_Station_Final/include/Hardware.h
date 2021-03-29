@@ -21,7 +21,7 @@
 #define LIFT_CONVEYOR_MOTOR_RELAY_SWITCH2_PIN           (62U) //62 역
 
 /* Elevate Motor - PWM */
-#define ELEVATE_MOTOR_PWM_PIN                           (2U)  // P2
+#define ELEVATE_MOTOR_PWM_PIN                           (2U)  
 #define ELEVATE_MOTOR_BREAK_PIN                         (6U) 
 #define ELEVATE_MOTOR_CW_PIN                            (11U) // P12 - 
 #define ELEVATE_MOTOR_CCW_PIN                           (12U) // P11 -
@@ -30,7 +30,7 @@
 #define LIFT_IR_READ_PIN                                (37U) 
 #define LIFT_IR_LED_PIN                                 (64U) 
 
-//#define MAIN_IR_LED_PIN                                 (2U) //2 오디세이로
+//#define MAIN_IR_LED_PIN                               (2U) //2 오디세이로
 /* 원격 킬 output pin*/
 // 오디세이로 3, 4
 
