@@ -25,5 +25,5 @@ bool IrSensor::GetState() const
         return false;
     }
 
-    return digitalRead(mReadPin);
+    return !digitalRead(mReadPin);
 }

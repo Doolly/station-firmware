@@ -23,16 +23,15 @@
 /* Elevate Motor - PWM */
 #define ELEVATE_MOTOR_PWM_PIN                           (2U)  
 #define ELEVATE_MOTOR_BREAK_PIN                         (6U) 
-#define ELEVATE_MOTOR_CW_PIN                            (11U) // P12 - 
-#define ELEVATE_MOTOR_CCW_PIN                           (12U) // P11 -
+#define ELEVATE_MOTOR_CW_PIN                            (11U) 
+#define ELEVATE_MOTOR_CCW_PIN                           (12U) 
 
 /* IR */
 #define LIFT_IR_READ_PIN                                (37U) 
 #define LIFT_IR_LED_PIN                                 (64U) 
 
-//#define MAIN_IR_LED_PIN                               (2U) //2 오디세이로
 /* 원격 킬 output pin*/
-// 오디세이로 3, 4
+#define SYSTEM_KILL_PIN                                 (65U)
 
 /* IR Sensor -> COM = GND */
 #define FLOOR1_FIRST_IR_READ_PIN                        (22U)

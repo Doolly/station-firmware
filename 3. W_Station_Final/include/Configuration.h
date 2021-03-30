@@ -23,6 +23,7 @@
 #define ANALOG_HIGH                         (65535U)
 
 #define ELEVATE_MOTOR_SPEED                 (30U)
+#define ELEVATE_BREAK_DELAY                 (300U)
 
 
 /* Floor */

@@ -19,31 +19,9 @@ Lift::Lift()
     , mbLiftItemStatus(false)
     , mbJamesParked(false)
 {
-    if (mLevelSwitchList[0].GetState() == true) 
-    {
-        mCurrentFloor = eFloor::FirstFloor;
-    }
-    else if (mLevelSwitchList[3].GetState() == true) 
-    {
-        mCurrentFloor = eFloor::ThirdFloor;
-    }
-    else 
-    {
-        if (mLevelSwitchList[1].GetState() == true && mLevelSwitchList[2].GetState() == true)
-        {
-            
-        }
-        else
-        {
-
-        }
-        
-        mCurrentFloor = eFloor::SecondFloor;
-    }
-
-   /* setting lift break */
-   //pinMode(ELEVATE_MOTOR_BREAK_PIN, OUTPUT);
-   analogWrite(ELEVATE_MOTOR_BREAK_PIN, ANALOG_LOW);
+    /* setting lift break */
+    pinMode(ELEVATE_MOTOR_BREAK_PIN, OUTPUT);
+    analogWrite(ELEVATE_MOTOR_BREAK_PIN, ANALOG_LOW);
 }
 
 void Lift::Reset()
@@ -97,7 +75,8 @@ void Lift::StopElevateMotor()
     mElevateMotor.Stop();
 
     /* break on */
-    //analogWrite(ELEVATE_MOTOR_BREAK_PIN, ANALOG_LOW);
+    delay(ELEVATE_BREAK_DELAY);
+    analogWrite(ELEVATE_MOTOR_BREAK_PIN, ANALOG_LOW);
 }
 
 void Lift::UpdateCurrentFloor()
@@ -168,8 +147,7 @@ void Lift::UpdateJamesParked(bool bJamesParked)
 }
 
 void Lift::EmergencyStop()
-{
-    
+{ 
     mElevateMotor.Stop();
     mLiftConveyor.EmergencyStop();
 }

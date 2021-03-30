@@ -29,7 +29,7 @@ void PublishItemStatuses();
 void PublishLevelSwitchStatuses();
 
 void SubscribeLiftDestinationFloor(const std_msgs::Int8& floorOrNone);
-void SubscribePushItemToLift(const std_msgs::String& flag);
+void SubscribePushItem(const std_msgs::Bool& flag);
 void SubscribeSendToDestination(const std_msgs::String& dest);
 void SubscribeManual(const std_msgs::Bool& bManual);
 void SubscribeEmergency(const std_msgs::Bool& bEmergency);
@@ -74,7 +74,7 @@ ros::Publisher publishLevelSwitchStatuses("wstation/limited_switch_status", &lev
 
 /* ros - subscriber */
 ros::Subscriber<std_msgs::Int8> subscribeLiftDestinationFloor("wstation/lift_destination_floor", SubscribeLiftDestinationFloor); // "1", "2", "3"
-ros::Subscriber<std_msgs::String> subscribePushItemToLift("wstation/push_item_to_lift", SubscribePushItemToLift); // "push", "none"
+ros::Subscriber<std_msgs::Bool> subscribePushItemToLift("wstation/push_item", SubscribePushItem); 
 ros::Subscriber<std_msgs::String> subscribeSendToDestination("wstation/send_to_destination", SubscribeSendToDestination); // "james", "tray", "none"
 
 ros::Subscriber<std_msgs::Bool> subscribeManual("wstation/manual", SubscribeManual);
@@ -83,7 +83,7 @@ ros::Subscriber<std_msgs::Bool> subscribeEmergency("wstation/emergency", Subscri
 
 /* global publisher status instance */
 volatile bool gIsSubscribeLiftDestinationFloor = false;
-volatile bool gIsSubscribePushItemToLift = false;
+volatile bool gbPushItem = false;
 volatile bool gIsSubscribeSendToDestination = false;
 volatile bool gbManual = false;
 volatile bool gbEmergency = false;
@@ -125,8 +125,6 @@ void setup()
     nodeHandle.advertise(publishLiftCurrentFloor);
     nodeHandle.advertise(publishLiftStatus);
     nodeHandle.advertise(publishLiftItemStatus);
-    
-    // Added
     nodeHandle.advertise(publishLiftIrStatus);
     nodeHandle.advertise(publishLiftConveyorStatus);    
     nodeHandle.advertise(publishConveyorStatuses);
@@ -136,196 +134,24 @@ void setup()
     nodeHandle.subscribe(subscribeLiftDestinationFloor);
     nodeHandle.subscribe(subscribePushItemToLift);
     nodeHandle.subscribe(subscribeSendToDestination);
-
-    // add
     nodeHandle.subscribe(subscribeManual);
     nodeHandle.subscribe(subscribeEmergency);
 
     Timer1.initialize(PUBLISH_PERIOD_US);                
     Timer1.attachInterrupt(PublishISR);
 
-    /* lift의 생성자에서 while문을 실행하면 도중에 blocking 됨 - 리프트는 무조건 1층에서 시작 */
-    // if (gLift.GetCurrentFloor() != eFloor::FirstFloor) 
-    // {
-    //     while (gLift.GetCurrentFloor() != eFloor::FirstFloor)
-    //     {
-    //         gLift.MoveToFloor(eFloor::FirstFloor);
-    //         gLift.UpdateCurrentFloor();
-    //     }
-    //     gLift.StopElevateMotor();
-    // }
-}
+    pinMode(SYSTEM_KILL_PIN, OUTPUT);
+    digitalWrite(SYSTEM_KILL_PIN, HIGH);
 
-LevelSwitch lvSwitch0(FLOOR1_LIMITED_SWITCH_READ_PIN);
-LevelSwitch lvSwitch1(FLOOR2_LIMITED_SWITCH_READ_PIN);
-LevelSwitch lvSwitch2(FLOOR3_LIMITED_SWITCH_READ_PIN);
-LevelSwitch lvSwitch3(FLOOR3_CEILING_LIMITED_SWITCH_READ_PIN);
+    while (gLift.GetLevelSwitchStatus(0) != true)
+    {
+        gLift.MoveDown();
+    }
+    gLift.StopElevateMotor();
+}
 
 void loop() 
 {
-    /* test */
-    /*
-    while (true) 
-    {
-        gLift.GetConveyor().MoveLeft();
-        delay(1000);
-        gLift.GetConveyor().MoveRight();
-        delay(1000);
-        gLift.GetConveyor().Stop();
-        delay(1000);
-    
-    */    
-
-   //analogWrite(ELEVATE_MOTOR_BREAK_PIN, ANALOG_HIGH);
-   //digitalWrite(ELEVATE_MOTOR_CW_PIN, HIGH);
-   
-   //while (true)
-   //{   
-       
-        // gLift.MoveUp();
-        // delay(1000);
-
-        //gLift.MoveDown();
-        //delay(2000);
-
-        // gLift.StopElevateMotor();
-        // while(true);
-        
-        /* 1. Level Switch, Lift IR, Conveyor IR Test */
-        /*
-        if (lvSwitch0.GetState() == true) 
-        {
-            digitalWrite(DEBUG_LED1_PIN, HIGH);
-        }
-        else 
-        {
-            digitalWrite(DEBUG_LED1_PIN, LOW);
-        }
-
-        if (lvSwitch1.GetState() == true)
-        {
-            digitalWrite(DEBUG_LED2_PIN, HIGH);
-        }
-        else 
-        {
-            digitalWrite(DEBUG_LED2_PIN, LOW);
-        }
-
-        if (lvSwitch2.GetState() == true)
-        {
-            digitalWrite(DEBUG_LED3_PIN, HIGH);
-        }
-        else 
-        {
-            digitalWrite(DEBUG_LED3_PIN, LOW);
-        }
-
-        if (lvSwitch3.GetState() == true)
-        {
-            digitalWrite(DEBUG_LED4_PIN, HIGH);
-        }
-        else 
-        {
-            digitalWrite(DEBUG_LED4_PIN, LOW);
-        }
-        */
-        
-
-        /* main LED */
-        //digitalWrite(LIFT_IR_LED_PIN, HIGH);
-        // delay(5000);
-        // digitalWrite(LIFT_IR_LED_PIN, LOW);
-        // delay(5000);
-
-        /*
-        if (gLift.GetIrStatus() == true)
-        {
-            digitalWrite(DEBUG_LED1_PIN, HIGH);
-        }
-        else
-        {
-            digitalWrite(DEBUG_LED1_PIN, LOW);
-        }
-        */
-        
-
-        /*
-        for (int index = 0; index < MAX_FLOOR_COUNT; ++index)
-        {
-            for (int irIndex = 0; irIndex < 5; ++irIndex)
-            {
-                if (gConveyorList[index].GetIrSensorStatus(irIndex) == true)
-                {
-                    digitalWrite(DEBUG_LED2_PIN, HIGH);
-                }
-                else
-                {
-                    digitalWrite(DEBUG_LED2_PIN, LOW);
-                }
-            }
-        }
-        */
-       
-        /* 2. Conveyor Test */
-        // gConveyorList[0].MoveRight();
-        // delay(5000);
-        // gConveyorList[0].Stop();
-        // delay(5000);
-
-        // INFO : second floor not working 
-        // gConveyorList[1].MoveLeft();
-        // delay(5000);
-        // gConveyorList[1].Stop();
-        // delay(5000);
-
-        // gConveyorList[2].MoveLeft();
-        // delay(5000);
-        // gConveyorList[2].Stop();
-        // delay(5000);
-        
-
-        /* 3. Lift Test */
-        
-        // Up Down
-        /*
-        gLift.MoveToFloor(eFloor::FirstFloor);
-        while (gLift.GetCurrentFloor() != eFloor::FirstFloor)
-        {
-            gLift.UpdateCurrentFloor();
-        }
-        gLift.StopElevateMotor();
-        
-        gLift.MoveToFloor(eFloor::SecondFloor);
-        while (gLift.GetCurrentFloor() != eFloor::SecondFloor)
-        {
-            gLift.UpdateCurrentFloor();
-        }
-        gLift.StopElevateMotor();
-
-        gLift.MoveToFloor(eFloor::ThirdFloor);
-        while (gLift.GetCurrentFloor() != eFloor::ThirdFloor)
-        {
-            gLift.UpdateCurrentFloor();
-        }
-        gLift.StopElevateMotor();
-
-        gLift.MoveToFloor(eFloor::FirstFloor);
-        while (gLift.GetCurrentFloor() != eFloor::FirstFloor)
-        {
-            gLift.UpdateCurrentFloor();
-        }
-        gLift.StopElevateMotor();
-        */
-
-        // Lift Conveyor Left Right
-        // gLift.GetConveyor().MoveLeft();
-        // delay(5000);
-        // gLift.GetConveyor().MoveRight();
-        // delay(5000);
-        // gLift.GetConveyor().Stop();
-        // delay(5000);
-    //}
-
     gLift.UpdateCurrentFloor();
     
     /* Publish current states */
@@ -336,8 +162,6 @@ void loop()
         PublishLiftCurrentFloor();
         PublishLiftStatus();
         PublishLiftItemStatus();
-
-        // Added
         PublishLiftIrStatus();
         PublishLiftConveyorStatus();
         PublishConveyorStatuses();
@@ -354,26 +178,26 @@ void loop()
     /*
         3 -> 1 으로 lift가 움직이고 있는 도중 2층에서 manual mode shooking 이 들어왔을 경우?
     */
-    /*
+    
     if (gbManual == true)
     {
-        
+        digitalWrite(SYSTEM_KILL_PIN, HIGH);   
     }
-
-    if (gbManual == false)
-    {
-    }
-    */
 
     if (gbEmergency == true) 
     {
+        gbEmergency = false;
+        digitalWrite(SYSTEM_KILL_PIN, LOW);
+
         gLift.EmergencyStop();
         for (uint8_t index = 0; index < MAX_FLOOR_COUNT; ++index) 
         {
             gConveyorList[index].EmergencyStop();
         }
-
-        gbEmergency = false;
+    }
+    else 
+    {
+        digitalWrite(SYSTEM_KILL_PIN, HIGH);
     }
 
     /* subscribe -> [wstation/lift_destination_floor] */
@@ -392,9 +216,9 @@ void loop()
     CheckLiftArrivedAtTargetFloor(); // If arrived, stop the motor
 
     /* subscribe -> [wstation/push_item_to_lift] */
-    if (gIsSubscribePushItemToLift == true)
+    if (gbPushItem == true)
     {
-        gIsSubscribePushItemToLift = false;
+        gbPushItem = false;
 
         if (gLift.GetLiftItemStatus() == true) 
         {
@@ -563,14 +387,9 @@ void SubscribeLiftDestinationFloor(const std_msgs::Int8& floorOrNone)
     gIsSubscribeLiftDestinationFloor = true;
 }
 
-void SubscribePushItemToLift(const std_msgs::String& flag)
+void SubscribePushItem(const std_msgs::Bool& flag)
 {
-    if (strcmp(flag.data, COMMAND_NONE) == 0)
-    {
-        return;
-    }
-    
-    gIsSubscribePushItemToLift = true;
+    gbPushItem = flag.data;
 }
 
 void SubscribeSendToDestination(const std_msgs::String& dest)
@@ -632,25 +451,26 @@ void CheckLiftArrivedAtTargetFloor()
 
 void CheckItemIsPushedToLift()
 {
-    Conveyor* currentConveyor = &gConveyorList[static_cast<uint8_t>(gLift.GetCurrentFloor()) - 1];
+    Conveyor* currentConveyor = &gConveyorList[static_cast<uint8_t>(gLift.GetCurrentFloor())];
 
     if (currentConveyor->GetStatus() == eConveyorStatus::RIGHT || currentConveyor->GetStatus() == eConveyorStatus::LEFT)
     {
         if (gLift.GetIrStatus() == true) 
         {
             currentConveyor->SetItemPassed(true);
-            // IrSensor Chatterring
-            delay(50);                     
+            delay(50); // IrSensor Chatterring
         }
 
         /* item completely arrived at lift */
         if (gLift.GetIrStatus() == false && currentConveyor->IsItemPassed() == true)
         {
+            currentConveyor->Stop();
+            currentConveyor->SetItemPassed(false);
+
+            delay(600);
             gLift.GetConveyor().Stop();
             gLift.SetLiftItemStatus(true);
 
-            currentConveyor->Stop();
-            currentConveyor->SetItemPassed(false);
         }
     }
 }
@@ -668,7 +488,7 @@ void CheckItemIsPushedToDestination()
             delay(5000);        
             gLift.Reset();
         }
-        else // recved "tray" message
+        else if (gDestination == COMMAND_SEND_TO_TRAY)// recved "tray" message
         {
             if (gLift.GetIrStatus() == true)
             {
@@ -683,6 +503,7 @@ void CheckItemIsPushedToDestination()
 
                 /* 1층 컨베이어를 어느정도 움직여 줘야 함! */
                 // 1층에 물건이 꽉 찾을 경우?
+                delay(2000);
                 gConveyorList[0].Stop();
                 gConveyorList[static_cast<uint8_t>(eFloor::FirstFloor)].SetItemPassed(false);
             }
