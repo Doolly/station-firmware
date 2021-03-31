@@ -33,6 +33,7 @@ void SubscribePushItem(const std_msgs::Bool& flag);
 void SubscribeSendToDestination(const std_msgs::String& dest);
 void SubscribeManual(const std_msgs::Bool& bManual);
 void SubscribeEmergency(const std_msgs::Bool& bEmergency);
+void SubscribeJamesArrived(const std_msgs::Bool& bJamesArrived);
 
 void CheckLiftArrivedAtTargetFloor();
 void CheckItemIsPushedToLift();
@@ -79,7 +80,7 @@ ros::Subscriber<std_msgs::String> subscribeSendToDestination("wstation/send_to_d
 
 ros::Subscriber<std_msgs::Bool> subscribeManual("wstation/manual", SubscribeManual);
 ros::Subscriber<std_msgs::Bool> subscribeEmergency("wstation/emergency", SubscribeEmergency);
-
+ros::Subscriber<std_msgs::Bool> subscribeJamesArrived("wstation/jamesarrived", SubscribeJamesArrived);
 
 /* global publisher status instance */
 volatile bool gIsSubscribeLiftDestinationFloor = false;
@@ -87,6 +88,7 @@ volatile bool gbPushItem = false;
 volatile bool gIsSubscribeSendToDestination = false;
 volatile bool gbManual = false;
 volatile bool gbEmergency = false;
+volatile bool gbJamesArrived = false;
 
 /* global hardware instance */
 Lift gLift;
@@ -203,6 +205,7 @@ void loop()
     /* subscribe -> [wstation/lift_destination_floor] */
     if (gIsSubscribeLiftDestinationFloor == true) 
     {
+        digitalWrite(LIFT_IR_LED_PIN, LOW);
         gIsSubscribeLiftDestinationFloor = false;
         
         if (gLift.GetLiftStatus() == eLiftStatus::ARRIVED) 
@@ -246,24 +249,15 @@ void loop()
         {
             if (gDestination == COMMAND_SEND_TO_JAMES)
             {
-                if (gLift.IsJamesParked() == true)
-                {
-                    gLift.GetConveyor().MoveLeft();
-                }
+                nodeHandle.loginfo("1");
+                gLift.GetConveyor().MoveLeft();
             }
-            else // recieved "tray"
+            else if (gDestination == COMMAND_SEND_TO_TRAY)
             {
                 // TODO: tray가 꽉 차있을 경우 처리해야 함
-                if (false)  
-                {
-                    // alarm();
-                }
-                else 
-                {
-                    gLift.GetConveyor().MoveRight();
-                    gConveyorList[0].MoveRight();
-                }
                 
+                gLift.GetConveyor().MoveRight();
+                gConveyorList[0].MoveRight();
             }
         }
     }
@@ -383,6 +377,11 @@ void SubscribeLiftDestinationFloor(const std_msgs::Int8& floorOrNone)
         return;
     }
 
+    if (gLift.GetLiftStatus() == eLiftStatus::UP || gLift.GetLiftStatus() == eLiftStatus::DOWN)
+    {
+        return;
+    }
+
     gTargetFloor = static_cast<eFloor>(floorOrNone.data - 1);
     gIsSubscribeLiftDestinationFloor = true;
 }
@@ -394,10 +393,10 @@ void SubscribePushItem(const std_msgs::Bool& flag)
 
 void SubscribeSendToDestination(const std_msgs::String& dest)
 {
-    if (strcmp(dest.data, COMMAND_NONE) == 0)
-    {
-        return;
-    }
+    // if (strcmp(dest.data, COMMAND_NONE) == 0)
+    // {
+    //     return;
+    // }
 
     gDestination = dest.data;
     gIsSubscribeSendToDestination = true;
@@ -411,6 +410,11 @@ void SubscribeManual(const std_msgs::Bool& bManual)
 void SubscribeEmergency(const std_msgs::Bool& bEmergency)
 {
     gbEmergency = bEmergency.data;
+}
+
+void SubscribeJamesArrived(const std_msgs::Bool& bJamesArrived)
+{
+    gbJamesArrived = bJamesArrived.data;
 }
 
 void DebugLed1Toggle()
@@ -453,7 +457,8 @@ void CheckItemIsPushedToLift()
 {
     Conveyor* currentConveyor = &gConveyorList[static_cast<uint8_t>(gLift.GetCurrentFloor())];
 
-    if (currentConveyor->GetStatus() == eConveyorStatus::RIGHT || currentConveyor->GetStatus() == eConveyorStatus::LEFT)
+    //if (currentConveyor->GetStatus() == eConveyorStatus::RIGHT || currentConveyor->GetStatus() == eConveyorStatus::LEFT)
+    if (gLift.GetLiftItemStatus() == false)
     {
         if (gLift.GetIrStatus() == true) 
         {
@@ -478,15 +483,18 @@ void CheckItemIsPushedToLift()
 void CheckItemIsPushedToDestination()
 {
     /* send to "james" or "tray" => checking validation */
-    if (gLift.GetConveyor().GetStatus() == eConveyorStatus::LEFT || gLift.GetConveyor().GetStatus() == eConveyorStatus::RIGHT)
+    if (gLift.GetLiftItemStatus() == true)
     {
         if (gDestination == COMMAND_SEND_TO_JAMES)
         {
             // TODO: PC에서 카메라 영상 인식을 통해 물건이 전달됐음을 토픽으로 받았을 경우 리프트 모터 멈추기
             // "wstation/camera_item_state" => "none" => lift.Reset()
             // 일단 지금 제임스에게 잘 전달됐다는 토픽이 정의되지 않아 5초 동안 lift conveyor 돌린 후 stop() 되도록 시뮬
-            delay(5000);        
+            nodeHandle.loginfo("2");
+
+            delay(3000);        
             gLift.Reset();
+            gDestination = COMMAND_NONE;
         }
         else if (gDestination == COMMAND_SEND_TO_TRAY)// recved "tray" message
         {
@@ -506,6 +514,7 @@ void CheckItemIsPushedToDestination()
                 delay(2000);
                 gConveyorList[0].Stop();
                 gConveyorList[static_cast<uint8_t>(eFloor::FirstFloor)].SetItemPassed(false);
+                gDestination = COMMAND_NONE;
             }
         }
     }
