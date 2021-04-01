@@ -188,13 +188,8 @@ void loop()
     else if ((gbEmergency == true) && (gbManual == false))
     {
         digitalWrite(SYSTEM_KILL_PIN, LOW);
-<<<<<<< HEAD
-
         gLift.StopElevateMotor();
         gLift.GetConveyor().Stop();
-=======
-        gLift.EmergencyStop();
->>>>>>> 06ea6774a126d0a4ab69e51ae1a8969e5761d159
         for (uint8_t index = 0; index < MAX_FLOOR_COUNT; ++index) 
         {
             gConveyorList[index].EmergencyStop();
@@ -242,11 +237,10 @@ void loop()
         gIsSubscribeSendToDestination = false;
         DebugLed4Toggle();
 
-        if (gLift.GetLiftStatus() == eLiftStatus::ARRIVED && gLift.GetLiftItemStatus() == true && gLift.GetCurrentFloor() == eF)
+        if (gLift.GetLiftStatus() == eLiftStatus::ARRIVED && gLift.GetLiftItemStatus() == true && gLift.GetCurrentFloor() == eFloor::FirstFloor)
         {
             if (gDestination == COMMAND_SEND_TO_JAMES)
             {
-                nodeHandle.loginfo("1");
                 gLift.GetConveyor().MoveLeft();
             }
             else if (gDestination == COMMAND_SEND_TO_TRAY)
@@ -475,8 +469,7 @@ void CheckItemIsSendToDestination()
             // TODO: PC에서 카메라 영상 인식을 통해 물건이 전달됐음을 토픽으로 받았을 경우 리프트 모터 멈추기
             // "wstation/camera_item_state" => "none" => lift.Reset()
             // 일단 지금 제임스에게 잘 전달됐다는 토픽이 정의되지 않아 5초 동안 lift conveyor 돌린 후 stop() 되도록 시뮬
-            nodeHandle.loginfo("2");
-
+   
             delay(3000);        
             gLift.Reset();
             gDestination = COMMAND_NONE;
