@@ -33,11 +33,10 @@ void SubscribePushItem(const std_msgs::Bool& flag);
 void SubscribeSendToDestination(const std_msgs::String& dest);
 void SubscribeManual(const std_msgs::Bool& bManual);
 void SubscribeEmergency(const std_msgs::Bool& bEmergency);
-void SubscribeJamesArrived(const std_msgs::Bool& bJamesArrived);
 
 void CheckLiftArrivedAtTargetFloor();
-void CheckItemIsPushedToLift();
-void CheckItemIsPushedToDestination();
+void CheckItemIsPushedItem();
+void CheckItemIsSendToDestination();
 
 void DebugLed1Toggle();
 void DebugLed2Toggle();
@@ -80,7 +79,6 @@ ros::Subscriber<std_msgs::String> subscribeSendToDestination("wstation/send_to_d
 
 ros::Subscriber<std_msgs::Bool> subscribeManual("wstation/manual", SubscribeManual);
 ros::Subscriber<std_msgs::Bool> subscribeEmergency("wstation/emergency", SubscribeEmergency);
-ros::Subscriber<std_msgs::Bool> subscribeJamesArrived("wstation/jamesarrived", SubscribeJamesArrived);
 
 /* global publisher status instance */
 volatile bool gIsSubscribeLiftDestinationFloor = false;
@@ -88,7 +86,6 @@ volatile bool gbPushItem = false;
 volatile bool gIsSubscribeSendToDestination = false;
 volatile bool gbManual = false;
 volatile bool gbEmergency = false;
-volatile bool gbJamesArrived = false;
 
 /* global hardware instance */
 Lift gLift;
@@ -142,9 +139,11 @@ void setup()
     Timer1.initialize(PUBLISH_PERIOD_US);                
     Timer1.attachInterrupt(PublishISR);
 
+    /* System kill pin initialization */
     pinMode(SYSTEM_KILL_PIN, OUTPUT);
     digitalWrite(SYSTEM_KILL_PIN, HIGH);
 
+    /* Go to first floor at starting system */
     while (gLift.GetLevelSwitchStatus(0) != true)
     {
         gLift.MoveDown();
@@ -188,9 +187,7 @@ void loop()
 
     if (gbEmergency == true) 
     {
-        gbEmergency = false;
         digitalWrite(SYSTEM_KILL_PIN, LOW);
-
         gLift.EmergencyStop();
         for (uint8_t index = 0; index < MAX_FLOOR_COUNT; ++index) 
         {
@@ -202,7 +199,6 @@ void loop()
         digitalWrite(SYSTEM_KILL_PIN, HIGH);
     }
 
-    /* subscribe -> [wstation/lift_destination_floor] */
     if (gIsSubscribeLiftDestinationFloor == true) 
     {
         digitalWrite(LIFT_IR_LED_PIN, LOW);
@@ -216,19 +212,13 @@ void loop()
         DebugLed2Toggle();
     }
 
-    CheckLiftArrivedAtTargetFloor(); // If arrived, stop the motor
+    CheckLiftArrivedAtTargetFloor();
 
-    /* subscribe -> [wstation/push_item_to_lift] */
     if (gbPushItem == true)
     {
         gbPushItem = false;
 
-        if (gLift.GetLiftItemStatus() == true) 
-        {
-            gConveyorList[static_cast<uint8_t>(gLift.GetCurrentFloor())].Stop();
-            gLift.GetConveyor().Stop();
-        }
-        else 
+        if (gLift.GetLiftItemStatus() == false)
         {
             gConveyorList[static_cast<uint8_t>(gLift.GetCurrentFloor())].MoveLeft();
             gLift.GetConveyor().MoveLeft();
@@ -237,7 +227,7 @@ void loop()
         DebugLed3Toggle();
     }
 
-    CheckItemIsPushedToLift();
+    CheckItemIsPushedItem();
 
     /* subscribe -> [wstation/send_to_destination] */
     if (gIsSubscribeSendToDestination == true)
@@ -245,7 +235,7 @@ void loop()
         gIsSubscribeSendToDestination = false;
         DebugLed4Toggle();
 
-        if (gLift.GetLiftStatus() == eLiftStatus::ARRIVED && gLift.GetLiftItemStatus() == true)
+        if (gLift.GetLiftStatus() == eLiftStatus::ARRIVED && gLift.GetLiftItemStatus() == true && gLift.GetCurrentFloor() == eF)
         {
             if (gDestination == COMMAND_SEND_TO_JAMES)
             {
@@ -262,7 +252,7 @@ void loop()
         }
     }
 
-    CheckItemIsPushedToDestination();
+    CheckItemIsSendToDestination();
 }
 
 void InitializeItemStatuses()
@@ -393,11 +383,6 @@ void SubscribePushItem(const std_msgs::Bool& flag)
 
 void SubscribeSendToDestination(const std_msgs::String& dest)
 {
-    // if (strcmp(dest.data, COMMAND_NONE) == 0)
-    // {
-    //     return;
-    // }
-
     gDestination = dest.data;
     gIsSubscribeSendToDestination = true;
 }
@@ -410,11 +395,6 @@ void SubscribeManual(const std_msgs::Bool& bManual)
 void SubscribeEmergency(const std_msgs::Bool& bEmergency)
 {
     gbEmergency = bEmergency.data;
-}
-
-void SubscribeJamesArrived(const std_msgs::Bool& bJamesArrived)
-{
-    gbJamesArrived = bJamesArrived.data;
 }
 
 void DebugLed1Toggle()
@@ -453,17 +433,15 @@ void CheckLiftArrivedAtTargetFloor()
     }
 }
 
-void CheckItemIsPushedToLift()
+void CheckItemIsPushedItem()
 {
     Conveyor* currentConveyor = &gConveyorList[static_cast<uint8_t>(gLift.GetCurrentFloor())];
 
-    //if (currentConveyor->GetStatus() == eConveyorStatus::RIGHT || currentConveyor->GetStatus() == eConveyorStatus::LEFT)
     if (gLift.GetLiftItemStatus() == false)
     {
         if (gLift.GetIrStatus() == true) 
         {
             currentConveyor->SetItemPassed(true);
-            delay(50); // IrSensor Chatterring
         }
 
         /* item completely arrived at lift */
@@ -480,7 +458,7 @@ void CheckItemIsPushedToLift()
     }
 }
 
-void CheckItemIsPushedToDestination()
+void CheckItemIsSendToDestination()
 {
     /* send to "james" or "tray" => checking validation */
     if (gLift.GetLiftItemStatus() == true)
@@ -501,7 +479,6 @@ void CheckItemIsPushedToDestination()
             if (gLift.GetIrStatus() == true)
             {
                 gConveyorList[static_cast<uint8_t>(eFloor::FirstFloor)].SetItemPassed(true);
-                delay(50);              // IrSensor Chatterring
             }
 
             // item completely arrived at tray conveyor 
@@ -509,8 +486,8 @@ void CheckItemIsPushedToDestination()
             {
                 gLift.Reset();
 
-                /* 1층 컨베이어를 어느정도 움직여 줘야 함! */
                 // 1층에 물건이 꽉 찾을 경우?
+
                 delay(2000);
                 gConveyorList[0].Stop();
                 gConveyorList[static_cast<uint8_t>(eFloor::FirstFloor)].SetItemPassed(false);
