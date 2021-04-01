@@ -74,54 +74,6 @@ bool Lift::MoveToFloor(eFloor targetFloor)
     return true;
 }
 
-bool Lift::MoveToFloorManual(eFloor targetFloor)
-{
-    if (targetFloor == eFloor::None)
-    {
-        return false;
-    }
-    
-    uint8_t floorFlag;
-    for (uint8_t i = 0; i < MAX_LEVEL_SWITCH_COUNT; ++i) 
-    {
-        floorFlag |= (GetLevelSwitchStatus(i) << i);
-    }
-
-    switch (targetFloor) 
-    {
-        case eFloor::FirstFloor:
-            if (floorFlag != 0x01) 
-            {
-                mLiftStatus = eLiftStatus::DOWN;
-                MoveDown();
-            }
-            break;
-        case eFloor::SecondFloor:
-            if (floorFlag != 0x06 && floorFlag > 0x06) 
-            {
-                mLiftStatus = eLiftStatus::DOWN;
-                MoveDown();
-            }
-            else if (floorFlag != 0x06 && floorFlag < 0x06) 
-            {
-                mLiftStatus = eLiftStatus::UP;
-                MoveUp();
-            }
-            break;
-        case eFloor::ThirdFloor:
-            if (floorFlag != 0x10) 
-            {
-                mLiftStatus = eLiftStatus::UP;
-                MoveUp();
-            }
-            break;
-        default:
-            return false;
-    }
-
-    return true;
-}
-
 void Lift::StopElevateMotor()
 {
     mLiftStatus = eLiftStatus::ARRIVED;

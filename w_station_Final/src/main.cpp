@@ -171,19 +171,18 @@ void loop()
     nodeHandle.spinOnce();
 
     /* manual & emergency mode */
-    if (gbManual == true)
+    if ((gbEmergency == false) || (gbManual == true))
     {
         digitalWrite(SYSTEM_KILL_PIN, SYSTEM_KILL_OFF);   
     }
     else if ((gbEmergency == true) && (gbManual == false))
     {
         digitalWrite(SYSTEM_KILL_PIN, SYSTEM_KILL_ON);
-   
-        gTargetFloor = eFloor::None;
-        gLift.StopElevateMotor();
+
+        gLift.EmergencyStop();
         for (uint8_t index = 0; index < MAX_FLOOR_COUNT; ++index) 
         {
-            gConveyorList[index].Stop();
+            gConveyorList[index].EmergencyStop();
         }
     }
 
@@ -193,13 +192,9 @@ void loop()
     {
         gIsSubscribeLiftDestinationFloor = false;
         
-        if ((gLift.GetLiftStatus() == eLiftStatus::ARRIVED) && (gbManual == false)) 
+        if ((gLift.GetLiftStatus() == eLiftStatus::ARRIVED)) 
         {
             gLift.MoveToFloor(gTargetFloor);
-        }
-        else if ((gLift.GetLiftStatus() == eLiftStatus::ARRIVED) && (gbManual == true))
-        {
-            gLift.MoveToFloorManual(gTargetFloor);
         }
 
         DebugLed2Toggle();
