@@ -186,17 +186,18 @@ void loop()
         digitalWrite(SYSTEM_KILL_PIN, HIGH);   
     }
 
-    if (gbEmergency == true) 
+    else if ((gbEmergency == true) && (gbManual == false))
     {
-        gbEmergency = false;
         digitalWrite(SYSTEM_KILL_PIN, LOW);
 
-        gLift.EmergencyStop();
+        gLift.StopElevateMotor();
+        gLift.GetConveyor().Stop();
         for (uint8_t index = 0; index < MAX_FLOOR_COUNT; ++index) 
         {
             gConveyorList[index].EmergencyStop();
         }
     }
+
     else 
     {
         digitalWrite(SYSTEM_KILL_PIN, HIGH);
