@@ -27,11 +27,12 @@
 
 
 /* Floor */
-enum class eFloor : uint8_t
+enum class eFloor : int8_t
 {
     FirstFloor,
     SecondFloor,
-    ThirdFloor
+    ThirdFloor,
+    None = -1
 };
 
 #endif /* CONFIGURATION_H */

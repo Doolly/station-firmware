@@ -29,6 +29,7 @@ public:
 
     void Reset();
     bool MoveToFloor(eFloor targetFloor);
+    bool MoveToFloorManual(eFloor targetFloor);
     void StopElevateMotor();
     void UpdateCurrentFloor();
 

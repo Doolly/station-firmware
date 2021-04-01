@@ -16,6 +16,7 @@
 #include "TimerInterrupt.h"
 #include "Hardware.h"
 
+void InitializeLiftFloor();
 void InitializeItemStatuses();
 void IntializeLevelSwitchStatuses();
 
@@ -95,11 +96,11 @@ Conveyor gConveyorList[MAX_FLOOR_COUNT] = {
     Conveyor(FLOOR2_MOTOR_RELAY_SWITCH1_PIN, -1, eFloor::SecondFloor), 
     Conveyor(FLOOR3_MOTOR_RELAY_SWITCH1_PIN, -1, eFloor::ThirdFloor)
 };
-//Conveyor* gCurrentConveyor = nullptr; //why?
 
 eFloor gTargetFloor;
 String gDestination;
 
+/* debug led toggle flag */
 bool gLed1Toggle = false;
 bool gLed2Toggle = false;
 bool gLed3Toggle = false;
@@ -112,10 +113,14 @@ void setup()
     pinMode(DEBUG_LED3_PIN, OUTPUT);
     pinMode(DEBUG_LED4_PIN, OUTPUT);
     
+    /* System kill pin initialization */
+    pinMode(SYSTEM_KILL_PIN, OUTPUT);
+    digitalWrite(SYSTEM_KILL_PIN, SYSTEM_KILL_OFF);
+
     InitializeItemStatuses();
     IntializeLevelSwitchStatuses();
 
-    // 아날로그 입력 기준전압을 VREF 핀에 연결되어 있는 5V로 설정 [A0, A1, A2, A3] for LevelSwitch
+    // external analog input reference voltage setting to 5V [A0, A1, A2, A3] */
     analogReference(EXTERNAL);
 
     nodeHandle.getHardware()->setBaud(115200);
@@ -139,16 +144,7 @@ void setup()
     Timer1.initialize(PUBLISH_PERIOD_US);                
     Timer1.attachInterrupt(PublishISR);
 
-    /* System kill pin initialization */
-    pinMode(SYSTEM_KILL_PIN, OUTPUT);
-    digitalWrite(SYSTEM_KILL_PIN, HIGH);
-
-    /* Go to first floor at starting system */
-    while (gLift.GetLevelSwitchStatus(0) != true)
-    {
-        gLift.MoveDown();
-    }
-    gLift.StopElevateMotor();
+    InitializeLiftFloor();
 }
 
 void loop() 
@@ -172,43 +168,38 @@ void loop()
         DebugLed1Toggle();
     }
 
-    /* Subscribe */
     nodeHandle.spinOnce();
 
-    //TODO: 토픽 받으면 subscribe 콜백 함수에서 움직이는 하드웨어들 전부 멈추게끔 만든다. 그후 gbManual을 true로!
-    /*
-        3 -> 1 으로 lift가 움직이고 있는 도중 2층에서 manual mode shooking 이 들어왔을 경우?
-    */
-    
+    /* manual & emergency mode */
     if (gbManual == true)
     {
-        digitalWrite(SYSTEM_KILL_PIN, HIGH);   
+        digitalWrite(SYSTEM_KILL_PIN, SYSTEM_KILL_OFF);   
     }
-
     else if ((gbEmergency == true) && (gbManual == false))
     {
-        digitalWrite(SYSTEM_KILL_PIN, LOW);
+        digitalWrite(SYSTEM_KILL_PIN, SYSTEM_KILL_ON);
+   
+        gTargetFloor = eFloor::None;
         gLift.StopElevateMotor();
-        gLift.GetConveyor().Stop();
         for (uint8_t index = 0; index < MAX_FLOOR_COUNT; ++index) 
         {
-            gConveyorList[index].EmergencyStop();
+            gConveyorList[index].Stop();
         }
     }
 
-    else 
-    {
-        digitalWrite(SYSTEM_KILL_PIN, HIGH);
-    }
+    /* sub process part */
 
     if (gIsSubscribeLiftDestinationFloor == true) 
     {
-        digitalWrite(LIFT_IR_LED_PIN, LOW);
         gIsSubscribeLiftDestinationFloor = false;
         
-        if (gLift.GetLiftStatus() == eLiftStatus::ARRIVED) 
+        if ((gLift.GetLiftStatus() == eLiftStatus::ARRIVED) && (gbManual == false)) 
         {
             gLift.MoveToFloor(gTargetFloor);
+        }
+        else if ((gLift.GetLiftStatus() == eLiftStatus::ARRIVED) && (gbManual == true))
+        {
+            gLift.MoveToFloorManual(gTargetFloor);
         }
 
         DebugLed2Toggle();
@@ -231,7 +222,6 @@ void loop()
 
     CheckItemIsPushedItem();
 
-    /* subscribe -> [wstation/send_to_destination] */
     if (gIsSubscribeSendToDestination == true)
     {
         gIsSubscribeSendToDestination = false;
@@ -254,6 +244,17 @@ void loop()
     }
 
     CheckItemIsSendToDestination();
+}
+
+void InitializeLiftFloor()
+{
+    /* Go to first floor at starting system */
+    while (gLift.GetLevelSwitchStatus(0) != true)
+    {
+        gLift.MoveDown();
+    }
+
+    gLift.StopElevateMotor();
 }
 
 void InitializeItemStatuses()
@@ -425,7 +426,7 @@ void DebugLed4Toggle()
 void CheckLiftArrivedAtTargetFloor()
 {
     /* lift will go to target floor => checking validation */
-    if (gLift.GetLiftStatus() == eLiftStatus::UP || gLift.GetLiftStatus() == eLiftStatus::DOWN)
+    if (gLift.GetLiftStatus() != eLiftStatus::ARRIVED)
     {
         if (gLift.GetCurrentFloor() == gTargetFloor) 
         {
@@ -450,11 +451,11 @@ void CheckItemIsPushedItem()
         {
             currentConveyor->Stop();
             currentConveyor->SetItemPassed(false);
+            digitalWrite(LIFT_MAIN_LED_PIN, HIGH);
 
             delay(600);
             gLift.GetConveyor().Stop();
             gLift.SetLiftItemStatus(true);
-
         }
     }
 }
@@ -472,7 +473,8 @@ void CheckItemIsSendToDestination()
    
             delay(3000);        
             gLift.Reset();
-            gDestination = COMMAND_NONE;
+
+            digitalWrite(LIFT_MAIN_LED_PIN, LOW);
         }
         else if (gDestination == COMMAND_SEND_TO_TRAY)// recved "tray" message
         {
@@ -491,7 +493,8 @@ void CheckItemIsSendToDestination()
                 delay(2000);
                 gConveyorList[0].Stop();
                 gConveyorList[static_cast<uint8_t>(eFloor::FirstFloor)].SetItemPassed(false);
-                gDestination = COMMAND_NONE;
+                
+                digitalWrite(LIFT_MAIN_LED_PIN, LOW);
             }
         }
     }

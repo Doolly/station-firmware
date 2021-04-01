@@ -28,10 +28,13 @@
 
 /* IR */
 #define LIFT_IR_READ_PIN                                (37U) 
-#define LIFT_IR_LED_PIN                                 (64U) 
+#define LIFT_MAIN_LED_PIN                               (64U) 
 
 /* 원격 킬 output pin*/
 #define SYSTEM_KILL_PIN                                 (65U)
+#define SYSTEM_KILL_OFF                                 (0x01U)
+#define SYSTEM_KILL_ON                                  (0x00U)
+
 
 /* IR Sensor -> COM = GND */
 #define FLOOR1_FIRST_IR_READ_PIN                        (22U)

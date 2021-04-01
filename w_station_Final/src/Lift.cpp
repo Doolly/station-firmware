@@ -13,7 +13,7 @@ Lift::Lift()
     : mElevateMotor(ELEVATE_MOTOR_PWM_PIN, ELEVATE_MOTOR_CW_PIN, ELEVATE_MOTOR_CCW_PIN)
     , mLiftConveyor(LIFT_CONVEYOR_MOTOR_RELAY_SWITCH1_PIN, LIFT_CONVEYOR_MOTOR_RELAY_SWITCH2_PIN)
     , mLevelSwitchList({ LevelSwitch(FLOOR1_LIMITED_SWITCH_READ_PIN), LevelSwitch(FLOOR2_LIMITED_SWITCH_READ_PIN), LevelSwitch(FLOOR3_LIMITED_SWITCH_READ_PIN), LevelSwitch(FLOOR3_CEILING_LIMITED_SWITCH_READ_PIN) })
-    , mLiftIrSensor(LIFT_IR_READ_PIN, LIFT_IR_LED_PIN)
+    , mLiftIrSensor(LIFT_IR_READ_PIN, LIFT_MAIN_LED_PIN)
     , mCurrentFloor(eFloor::FirstFloor)
     , mLiftStatus(eLiftStatus::ARRIVED)
     , mbLiftItemStatus(false)
@@ -34,6 +34,11 @@ void Lift::Reset()
 
 bool Lift::MoveToFloor(eFloor targetFloor)
 {
+    if (targetFloor == eFloor::None)
+    {
+        return false;
+    }
+
     /* Define move up & down */ 
     if (mCurrentFloor < targetFloor) 
     {
@@ -64,6 +69,54 @@ bool Lift::MoveToFloor(eFloor targetFloor)
     
     default:
         return false;
+    }
+
+    return true;
+}
+
+bool Lift::MoveToFloorManual(eFloor targetFloor)
+{
+    if (targetFloor == eFloor::None)
+    {
+        return false;
+    }
+    
+    uint8_t floorFlag;
+    for (uint8_t i = 0; i < MAX_LEVEL_SWITCH_COUNT; ++i) 
+    {
+        floorFlag |= (GetLevelSwitchStatus(i) << i);
+    }
+
+    switch (targetFloor) 
+    {
+        case eFloor::FirstFloor:
+            if (floorFlag != 0x01) 
+            {
+                mLiftStatus = eLiftStatus::DOWN;
+                MoveDown();
+            }
+            break;
+        case eFloor::SecondFloor:
+            if (floorFlag != 0x06 && floorFlag > 0x06) 
+            {
+                mLiftStatus = eLiftStatus::DOWN;
+                MoveDown();
+            }
+            else if (floorFlag != 0x06 && floorFlag < 0x06) 
+            {
+                mLiftStatus = eLiftStatus::UP;
+                MoveUp();
+            }
+            break;
+        case eFloor::ThirdFloor:
+            if (floorFlag != 0x10) 
+            {
+                mLiftStatus = eLiftStatus::UP;
+                MoveUp();
+            }
+            break;
+        default:
+            return false;
     }
 
     return true;
