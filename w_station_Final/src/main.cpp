@@ -173,17 +173,32 @@ void loop()
     /* manual & emergency mode */
     if ((gbEmergency == false) || (gbManual == true))
     {
-        digitalWrite(SYSTEM_KILL_PIN, SYSTEM_KILL_OFF);   
+        digitalWrite(SYSTEM_KILL_PIN, SYSTEM_KILL_OFF); 
+
+        if (gLift.GetLiftStatus() != eLiftStatus::ARRIVED) 
+        {
+            gLift.MoveToFloor(gTargetFloor);
+        }  
     }
     else if ((gbEmergency == true) && (gbManual == false))
     {
         digitalWrite(SYSTEM_KILL_PIN, SYSTEM_KILL_ON);
 
         gLift.EmergencyStop();
+
         for (uint8_t index = 0; index < MAX_FLOOR_COUNT; ++index) 
         {
             gConveyorList[index].EmergencyStop();
         }
+    }
+    else 
+    {
+        digitalWrite(SYSTEM_KILL_PIN, SYSTEM_KILL_OFF);
+
+        if (gLift.GetLiftStatus() != eLiftStatus::ARRIVED) 
+        {
+            gLift.MoveToFloor(gTargetFloor);
+        }  
     }
 
     /* sub process part */
