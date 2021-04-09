@@ -68,7 +68,7 @@ std_msgs::String conveyorStatuses;
 ros::Publisher publishConveyorStatuses("wstation/conveyor_status", &conveyorStatuses);
 
 std_msgs::Int8MultiArray itemStatuses;
-ros::Publisher publishItemStatuses("wstation/item_statuses", &itemStatuses);
+ros::Publisher publishItemStatuses("wstation/item_status", &itemStatuses);
 
 std_msgs::Int8MultiArray levelSwitchStatuses;
 ros::Publisher publishLevelSwitchStatuses("wstation/limited_switch_status", &levelSwitchStatuses);
@@ -162,7 +162,7 @@ void loop()
         PublishLiftIrStatus();
         PublishLiftConveyorStatus();
         PublishConveyorStatuses();
-        PublishItemStatuses();
+        //PublishItemStatuses();
         PublishLevelSwitchStatuses();
 
         DebugLed1Toggle();
@@ -219,8 +219,8 @@ void loop()
 
     if (gbPushItem == true)
     {
-        gbPushItem = false;
-
+        // gbPushItem = false;
+     
         if (gLift.GetLiftItemStatus() == false)
         {
             gConveyorList[static_cast<uint8_t>(gLift.GetCurrentFloor())].MoveLeft();
@@ -449,25 +449,29 @@ void CheckItemIsPushedItem()
 {
     Conveyor* currentConveyor = &gConveyorList[static_cast<uint8_t>(gLift.GetCurrentFloor())];
 
-    if (gLift.GetLiftItemStatus() == false)
+    if (gbPushItem == true)
     {
-        if (gLift.GetIrStatus() == true) 
+        if (gLift.GetLiftItemStatus() == false)
         {
-            currentConveyor->SetItemPassed(true);
-        }
+            if (gLift.GetIrStatus() == true) 
+            {
+                currentConveyor->SetItemPassed(true);
+            }
 
-        /* item completely arrived at lift */
-        if (gLift.GetIrStatus() == false && currentConveyor->IsItemPassed() == true)
-        {
-            currentConveyor->Stop();
-            currentConveyor->SetItemPassed(false);
-            digitalWrite(LIFT_MAIN_LED_PIN, HIGH);
+            /* item completely arrived at lift */
+            if (gLift.GetIrStatus() == false && currentConveyor->IsItemPassed() == true)
+            {
+                currentConveyor->Stop();
+                currentConveyor->SetItemPassed(false);
+                digitalWrite(LIFT_MAIN_LED_PIN, HIGH);
 
-            delay(600);
-            gLift.GetConveyor().Stop();
-            gLift.SetLiftItemStatus(true);
+                delay(600);
+                gLift.GetConveyor().Stop();
+                gLift.SetLiftItemStatus(true);
+            }
         }
     }
+
 }
 
 void CheckItemIsSendToDestination()
