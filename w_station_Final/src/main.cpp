@@ -68,7 +68,7 @@ std_msgs::String conveyorStatuses;
 ros::Publisher publishConveyorStatuses("wstation/conveyor_statuses", &conveyorStatuses);
 
 std_msgs::Int8MultiArray itemStatuses;
-ros::Publisher publishItemStatuses("wstation/item_statuses", &itemStatuses);
+ros::Publisher publishItemStatuses("wstation/item_status", &itemStatuses);
 
 std_msgs::Int8MultiArray levelSwitchStatuses;
 ros::Publisher publishLevelSwitchStatuses("wstation/level_switch_statuses", &levelSwitchStatuses);
@@ -162,7 +162,7 @@ void loop()
         PublishLiftIrStatus();
         PublishLiftConveyorStatus();
         PublishConveyorStatuses();
-        PublishItemStatuses();
+        //PublishItemStatuses();
         PublishLevelSwitchStatuses();
 
         DebugLed1Toggle();
@@ -173,18 +173,37 @@ void loop()
     /* manual & emergency mode */
     if ((gbEmergency == false) && (gbManual == true))
     {
+<<<<<<< HEAD
         digitalWrite(SYSTEM_KILL_PIN, SYSTEM_KILL_OFF);   
         // TODO: System totally Reset!!
+=======
+        digitalWrite(SYSTEM_KILL_PIN, SYSTEM_KILL_OFF); 
+
+        if (gLift.GetLiftStatus() != eLiftStatus::ARRIVED) 
+        {
+            gLift.MoveToFloor(gTargetFloor);
+        }  
+>>>>>>> 8eea3e3c3cc1472d101afa8088c459325902890a
     }
     else if ((gbEmergency == true) && (gbManual == false))
     {
         digitalWrite(SYSTEM_KILL_PIN, SYSTEM_KILL_ON);
 
         gLift.EmergencyStop();
+
         for (uint8_t index = 0; index < MAX_FLOOR_COUNT; ++index) 
         {
             gConveyorList[index].EmergencyStop();
         }
+    }
+    else 
+    {
+        digitalWrite(SYSTEM_KILL_PIN, SYSTEM_KILL_OFF);
+
+        if (gLift.GetLiftStatus() != eLiftStatus::ARRIVED) 
+        {
+            gLift.MoveToFloor(gTargetFloor);
+        }  
     }
 
     /* sub process part */
@@ -205,8 +224,8 @@ void loop()
 
     if (gbPushItem == true)
     {
-        gbPushItem = false;
-
+        // gbPushItem = false;
+     
         if (gLift.GetLiftItemStatus() == false)
         {
             gConveyorList[static_cast<uint8_t>(gLift.GetCurrentFloor())].MoveLeft();
@@ -435,25 +454,29 @@ void CheckItemIsPushedItem()
 {
     Conveyor* currentConveyor = &gConveyorList[static_cast<uint8_t>(gLift.GetCurrentFloor())];
 
-    if (gLift.GetLiftItemStatus() == false)
+    if (gbPushItem == true)
     {
-        if (gLift.GetIrStatus() == true) 
+        if (gLift.GetLiftItemStatus() == false)
         {
-            currentConveyor->SetItemPassed(true);
-        }
+            if (gLift.GetIrStatus() == true) 
+            {
+                currentConveyor->SetItemPassed(true);
+            }
 
-        /* item completely arrived at lift */
-        if (gLift.GetIrStatus() == false && currentConveyor->IsItemPassed() == true)
-        {
-            currentConveyor->Stop();
-            currentConveyor->SetItemPassed(false);
-            digitalWrite(LIFT_MAIN_LED_PIN, HIGH);
+            /* item completely arrived at lift */
+            if (gLift.GetIrStatus() == false && currentConveyor->IsItemPassed() == true)
+            {
+                currentConveyor->Stop();
+                currentConveyor->SetItemPassed(false);
+                digitalWrite(LIFT_MAIN_LED_PIN, HIGH);
 
-            delay(600);
-            gLift.GetConveyor().Stop();
-            gLift.SetLiftItemStatus(true);
+                delay(600);
+                gLift.GetConveyor().Stop();
+                gLift.SetLiftItemStatus(true);
+            }
         }
     }
+
 }
 
 void CheckItemIsSendToDestination()
