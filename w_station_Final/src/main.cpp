@@ -172,18 +172,14 @@ void loop()
 
     /* manual & emergency mode */
     if ((gbEmergency == false) && (gbManual == true))
-    {
-<<<<<<< HEAD
-        digitalWrite(SYSTEM_KILL_PIN, SYSTEM_KILL_OFF);   
+    {  
         // TODO: System totally Reset!!
-=======
         digitalWrite(SYSTEM_KILL_PIN, SYSTEM_KILL_OFF); 
 
         if (gLift.GetLiftStatus() != eLiftStatus::ARRIVED) 
         {
             gLift.MoveToFloor(gTargetFloor);
         }  
->>>>>>> 8eea3e3c3cc1472d101afa8088c459325902890a
     }
     else if ((gbEmergency == true) && (gbManual == false))
     {
