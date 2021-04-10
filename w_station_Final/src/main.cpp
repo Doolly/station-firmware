@@ -65,13 +65,13 @@ std_msgs::String liftConveyorStatus; // "left", "right", "stop"
 ros::Publisher publishLiftConveyorStatus("wstation/lift_conveyor_status", &liftConveyorStatus);
 
 std_msgs::String conveyorStatuses;
-ros::Publisher publishConveyorStatuses("wstation/conveyor_status", &conveyorStatuses);
+ros::Publisher publishConveyorStatuses("wstation/conveyor_statuses", &conveyorStatuses);
 
 std_msgs::Int8MultiArray itemStatuses;
 ros::Publisher publishItemStatuses("wstation/item_statuses", &itemStatuses);
 
 std_msgs::Int8MultiArray levelSwitchStatuses;
-ros::Publisher publishLevelSwitchStatuses("wstation/limited_switch_status", &levelSwitchStatuses);
+ros::Publisher publishLevelSwitchStatuses("wstation/level_switch_statuses", &levelSwitchStatuses);
 
 /* ros - subscriber */
 ros::Subscriber<std_msgs::Int8> subscribeLiftDestinationFloor("wstation/lift_destination_floor", SubscribeLiftDestinationFloor); // "1", "2", "3"
@@ -171,9 +171,10 @@ void loop()
     nodeHandle.spinOnce();
 
     /* manual & emergency mode */
-    if ((gbEmergency == false) || (gbManual == true))
+    if ((gbEmergency == false) && (gbManual == true))
     {
         digitalWrite(SYSTEM_KILL_PIN, SYSTEM_KILL_OFF);   
+        // TODO: System totally Reset!!
     }
     else if ((gbEmergency == true) && (gbManual == false))
     {
