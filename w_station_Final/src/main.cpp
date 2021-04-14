@@ -492,6 +492,7 @@ void CheckItemIsSendToDestination()
         {
             if (gLift.GetIrStatus() == true)
             {
+                // hihi
                 gConveyorList[static_cast<uint8_t>(eFloor::FirstFloor)].SetItemPassed(true);
             }
 
