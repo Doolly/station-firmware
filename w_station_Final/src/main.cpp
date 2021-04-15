@@ -65,13 +65,13 @@ std_msgs::String liftConveyorStatus; // "left", "right", "stop"
 ros::Publisher publishLiftConveyorStatus("wstation/lift_conveyor_status", &liftConveyorStatus);
 
 std_msgs::String conveyorStatuses;
-ros::Publisher publishConveyorStatuses("wstation/conveyor_status", &conveyorStatuses);
+ros::Publisher publishConveyorStatuses("wstation/conveyor_statuses", &conveyorStatuses);
 
 std_msgs::Int8MultiArray itemStatuses;
 ros::Publisher publishItemStatuses("wstation/item_status", &itemStatuses);
 
 std_msgs::Int8MultiArray levelSwitchStatuses;
-ros::Publisher publishLevelSwitchStatuses("wstation/limited_switch_status", &levelSwitchStatuses);
+ros::Publisher publishLevelSwitchStatuses("wstation/level_switch_statuses", &levelSwitchStatuses);
 
 /* ros - subscriber */
 ros::Subscriber<std_msgs::Int8> subscribeLiftDestinationFloor("wstation/lift_destination_floor", SubscribeLiftDestinationFloor); // "1", "2", "3"
@@ -171,8 +171,9 @@ void loop()
     nodeHandle.spinOnce();
 
     /* manual & emergency mode */
-    if ((gbEmergency == false) || (gbManual == true))
-    {
+    if ((gbEmergency == false) && (gbManual == true))
+    {  
+        // TODO: System totally Reset!!
         digitalWrite(SYSTEM_KILL_PIN, SYSTEM_KILL_OFF); 
 
         if (gLift.GetLiftStatus() != eLiftStatus::ARRIVED) 
@@ -219,8 +220,6 @@ void loop()
 
     if (gbPushItem == true)
     {
-        // gbPushItem = false;
-     
         if (gLift.GetLiftItemStatus() == false)
         {
             gConveyorList[static_cast<uint8_t>(gLift.GetCurrentFloor())].MoveLeft();
@@ -235,7 +234,6 @@ void loop()
     if (gIsSubscribeSendToDestination == true)
     {
         gIsSubscribeSendToDestination = false;
-        DebugLed4Toggle();
 
         if (gLift.GetLiftStatus() == eLiftStatus::ARRIVED && gLift.GetLiftItemStatus() == true && gLift.GetCurrentFloor() == eFloor::FirstFloor)
         {
@@ -246,11 +244,12 @@ void loop()
             else if (gDestination == COMMAND_SEND_TO_TRAY)
             {
                 // TODO: tray가 꽉 차있을 경우 처리해야 함
-                
                 gLift.GetConveyor().MoveRight();
                 gConveyorList[0].MoveRight();
             }
         }
+
+        DebugLed4Toggle();
     }
 
     CheckItemIsSendToDestination();
@@ -471,13 +470,12 @@ void CheckItemIsPushedItem()
             }
         }
     }
-
 }
 
 void CheckItemIsSendToDestination()
 {
     /* send to "james" or "tray" => checking validation */
-    if (gLift.GetLiftItemStatus() == true)
+    if (gLift.GetLiftItemStatus() == true && gLift.GetCurrentFloor() == eFloor::FirstFloor)
     {
         if (gDestination == COMMAND_SEND_TO_JAMES)
         {
@@ -494,6 +492,7 @@ void CheckItemIsSendToDestination()
         {
             if (gLift.GetIrStatus() == true)
             {
+                // hihi
                 gConveyorList[static_cast<uint8_t>(eFloor::FirstFloor)].SetItemPassed(true);
             }
 
@@ -505,7 +504,7 @@ void CheckItemIsSendToDestination()
                 // 1층에 물건이 꽉 찾을 경우?
 
                 delay(2000);
-                gConveyorList[0].Stop();
+                gConveyorList[static_cast<uint8_t>(eFloor::FirstFloor)].Stop();
                 gConveyorList[static_cast<uint8_t>(eFloor::FirstFloor)].SetItemPassed(false);
                 
                 digitalWrite(LIFT_MAIN_LED_PIN, LOW);
