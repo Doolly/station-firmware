@@ -162,7 +162,7 @@ void loop()
         PublishLiftIrStatus();
         PublishLiftConveyorStatus();
         PublishConveyorStatuses();
-        //PublishItemStatuses();
+        PublishItemStatuses();
         PublishLevelSwitchStatuses();
 
         DebugLed1Toggle();

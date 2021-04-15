@@ -30,6 +30,10 @@
 #define LIFT_IR_READ_PIN                                (37U) 
 #define LIFT_MAIN_LED_PIN                               (64U) 
 
+/* Roll Shutter */
+#define ROLL_SHUTTER_CW_PIN                             (68U)
+#define ROLL_SHUTTER_CCW_PIN                            (69U)
+
 /* 원격 킬 output pin*/
 #define SYSTEM_KILL_PIN                                 (65U)
 #define SYSTEM_KILL_OFF                                 (0x01U)
