@@ -145,6 +145,8 @@ void setup()
     Timer1.attachInterrupt(PublishISR);
 
     InitializeLiftFloor();
+
+    analogWrite(TOTAL_IR_LED_PIN, 65535);
 }
 
 void loop() 
@@ -352,8 +354,8 @@ void PublishItemStatuses()
     for (uint8_t index = 0; index < MAX_CONVEYOR_IR_SENSOR_COUNT; ++index) 
     {
         itemStatuses.data[0 + index] = gConveyorList[0].GetIrSensorStatus(index);
-        itemStatuses.data[4 + index] = gConveyorList[1].GetIrSensorStatus(index);
-        itemStatuses.data[8 + index] = gConveyorList[2].GetIrSensorStatus(index);
+        itemStatuses.data[5 + index] = gConveyorList[1].GetIrSensorStatus(index);
+        itemStatuses.data[10 + index] = gConveyorList[2].GetIrSensorStatus(index);
     }
 
     publishItemStatuses.publish(&itemStatuses);

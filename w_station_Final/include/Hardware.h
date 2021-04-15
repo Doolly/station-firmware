@@ -29,6 +29,7 @@
 /* IR */
 #define LIFT_IR_READ_PIN                                (37U) 
 #define LIFT_MAIN_LED_PIN                               (64U) 
+#define TOTAL_IR_LED_PIN                                (7U)
 
 /* Roll Shutter */
 #define ROLL_SHUTTER_CW_PIN                             (68U)
@@ -46,11 +47,13 @@
 #define FLOOR1_THIRD_IR_READ_PIN                        (24U)
 #define FLOOR1_FOURTH_IR_READ_PIN                       (25U)
 #define FLOOR1_FIFTH_IR_READ_PIN                        (26U)
+
 #define FLOOR2_FIRST_IR_READ_PIN                        (27U)
 #define FLOOR2_SECOND_IR_READ_PIN                       (28U)
 #define FLOOR2_THIRD_IR_READ_PIN                        (29U)
 #define FLOOR2_FOURTH_IR_READ_PIN                       (30U)
 #define FLOOR2_FIFTH_IR_READ_PIN                        (31U)
+
 #define FLOOR3_FIRST_IR_READ_PIN                        (32U)
 #define FLOOR3_SECOND_IR_READ_PIN                       (33U)
 #define FLOOR3_THIRD_IR_READ_PIN                        (34U)
