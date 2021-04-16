@@ -133,7 +133,7 @@ void Lift::SetLiftItemStatus(bool status)
 
 bool Lift::GetIrStatus() const
 {
-    return mLiftIrSensor.GetState();
+    return !(mLiftIrSensor.GetState());
 }
 
 int8_t Lift::GetLevelSwitchStatus(uint8_t index) const

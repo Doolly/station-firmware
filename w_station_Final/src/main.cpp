@@ -146,7 +146,10 @@ void setup()
 
     InitializeLiftFloor();
 
-    analogWrite(TOTAL_IR_LED_PIN, 65535);
+    // analogWrite(TOTAL_IR_LED_PIN, 65535);
+
+    pinMode(ROLL_SHUTTER_CW_PIN, OUTPUT);
+    pinMode(ROLL_SHUTTER_CCW_PIN, OUTPUT);
 }
 
 void loop() 
